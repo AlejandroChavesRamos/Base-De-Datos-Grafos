@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Gestionar {{ e.nombre }}{% endblock %}
+{% block contenido %}
+<div class="grid-ancho">
+  <section class="tarjeta seccion">
+    <div class="encabezado-pagina">
+      <div class="persona">{{ m.avatar(e.id, e.nombre, none, 56, true) }}
+        <div><h1>{{ e.nombre }}</h1><p class="sub">Gestión de ofertas y equipo · sesión como {{ 'cuenta de la empresa' if es_dueno else 'talento humano' }}</p></div></div>
+      <div class="acciones">
+        <a class="btn btn-solido" href="/empresa/{{ e.id }}/ofertas/nueva">Nueva oferta</a>
+        <a class="btn btn-borde" href="/empresa/{{ e.id }}">Ver página pública</a>
+        {% if es_dueno %}<a class="btn btn-borde" href="/empresa/{{ e.id }}/editar">Editar datos</a>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2>Ofertas ({{ ofertas|length }})</h2>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th scope="col">Oferta</th><th scope="col">Estado</th><th scope="col">Requisitos</th><th scope="col">Postulantes</th><th scope="col">Cierra</th></tr></thead>
+        <tbody>
+        {% for x in ofertas %}
+          <tr>
+            <td><a href="/ofertas/{{ x.oferta.id }}/gestion"><strong>{{ x.oferta.titulo }}</strong></a><div class="sub">{{ x.oferta.ciudad }} · {{ x.oferta.modalidad }}</div></td>
+            <td><span class="chip estado-{{ x.oferta.estado }}">{{ x.oferta.estado|capitalize }}</span></td>
+            <td>{{ x.requisitos }}</td><td>{{ x.postulantes }}</td><td>{{ x.oferta.fecha_cierre|fecha }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5">{{ m.vacio('Aún no has creado ofertas', 'Crea una, agrégale requisitos y publícala para recibir postulaciones.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="tarjeta seccion" id="equipo">
+    <h2>Equipo ({{ empleados|length }})</h2>
+    <p class="sub">Las personas con rol <strong>RR. HH.</strong> pueden crear y gestionar las ofertas de esta empresa.{% if not es_dueno %} Solo la cuenta de la empresa asigna este rol.{% endif %}</p>
+    {% for x in empleados %}
+    <div class="fila-accion pad-item">
+      {{ m.persona(x.usuario, x.cargo, 48) }}
+      <span class="chip {{ 'chip-azul' if x.rol == 'rrhh' }}">{{ 'RR. HH.' if x.rol == 'rrhh' else 'Trabajador' }}</span>
+      {% if es_dueno and puede_asignar %}
+        {{ m.boton_post(yo, '/empresa/' ~ e.id ~ '/empleados/' ~ x.usuario.id ~ '/rol',
+                        'Quitar RR. HH.' if x.rol == 'rrhh' else 'Dar rol RR. HH.',
+                        campos={'rol': 'trabajador' if x.rol == 'rrhh' else 'rrhh'}) }}
+      {% endif %}
+    </div>
+    {% else %}
+    {{ m.vacio('Nadie ha vinculado esta empresa como empleo actual', 'Las personas la agregan desde su experiencia laboral.') }}
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

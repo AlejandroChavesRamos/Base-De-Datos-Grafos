@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Mi red{% endblock %}
+{% block contenido %}
+<div class="grid-red">
+  <aside class="col-izq">
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Administrar mi red</h2></header>
+      <div class="fila-dato"><span>{{ m.icono('red', 18) }} Contactos</span><strong>{{ contactos|length }}</strong></div>
+      <div class="fila-dato"><span>{{ m.icono('mensaje', 18) }} Invitaciones recibidas</span><strong>{{ recibidas|length }}</strong></div>
+      <div class="fila-dato"><span>{{ m.icono('mensaje', 18) }} Invitaciones enviadas</span><strong>{{ enviadas|length }}</strong></div>
+    </section>
+  </aside>
+
+  <div class="col-centro-ancho">
+    {% if recibidas %}
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Invitaciones</h2></header>
+      {% for s in recibidas %}
+      <div class="invitacion">
+        {{ m.persona(s.usuario, (s.en_comun ~ ' en común · ' if s.en_comun) ~ (s.fecha|hace), 56) }}
+        {% if s.mensaje %}<p class="mensaje">“{{ s.mensaje }}”</p>{% endif %}
+        <div class="acciones">
+          {{ m.boton_post(yo, '/conexiones/ignorar/' ~ s.usuario.id, 'Ignorar', 'btn btn-borde', volver='/red') }}
+          {{ m.boton_post(yo, '/conexiones/aceptar/' ~ s.usuario.id, 'Aceptar', 'btn btn-solido', volver='/red') }}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Personas que quizás conozcas</h2></header>
+      <div class="rejilla-personas">
+        {% for s in sugerencias %}
+        <div class="tarjeta-persona">
+          <a href="/perfil/{{ s.usuario.id }}" tabindex="-1">{{ m.avatar(s.usuario.id, s.usuario.nombre, s.usuario.apellido, 80) }}</a>
+          <a class="nombre" href="/perfil/{{ s.usuario.id }}">{{ s.usuario.nombre }} {{ s.usuario.apellido }}</a>
+          <div class="sub">{{ s.usuario.titular }}</div>
+          <div class="sub">{{ s.amigos_comunes }} {{ 'contacto en común' if s.amigos_comunes == 1 else 'contactos en común' }}</div>
+          {{ m.boton_post(yo, '/conexiones/solicitar/' ~ s.usuario.id, 'Conectar', 'btn btn-borde btn-chico', volver='/red') }}
+        </div>
+        {% else %}
+        {{ m.vacio('Sin sugerencias por ahora', 'Conecta con más personas para recibir sugerencias.') }}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Mis contactos ({{ contactos|length }})</h2></header>
+      {% for c in contactos %}
+      <div class="pad-item contacto fila-accion">
+        {{ m.persona(c.usuario, (c.empresa ~ ' · ' if c.empresa) ~ 'Conectados desde ' ~ (c.desde|mes_anio), 56) }}
+        {{ m.boton_post(yo, '/conexiones/eliminar/' ~ c.usuario.id, 'Eliminar', volver='/red') }}
+      </div>
+      {% else %}
+      {{ m.vacio('Aún no tienes contactos', 'Empieza por las sugerencias de arriba.') }}
+      {% endfor %}
+    </section>
+
+    {% if enviadas %}
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Invitaciones enviadas</h2></header>
+      {% for s in enviadas %}<div class="pad-item fila-accion">{{ m.persona(s.usuario, 'Enviada ' ~ (s.fecha|hace), 48) }}
+        {{ m.boton_post(yo, '/conexiones/retirar/' ~ s.usuario.id, 'Retirar', volver='/red') }}</div>{% endfor %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

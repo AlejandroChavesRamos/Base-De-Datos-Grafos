@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Crear cuenta{% endblock %}
+{% block contenido %}
+<section class="registro-elegir">
+  <h1>¿Cómo vas a usar LinkedUn?</h1>
+  <p class="sub">Elige el tipo de cuenta. No se puede cambiar después.</p>
+  <div class="opciones-registro">
+    <a class="tarjeta opcion" href="/registro/persona">
+      <span class="icono-caja">{{ m.icono('usuario', 28) }}</span>
+      <strong>Soy una persona</strong>
+      <span>Crea tu perfil, conecta con profesionales y postúlate a ofertas.</span>
+    </a>
+    <a class="tarjeta opcion" href="/registro/empresa">
+      <span class="icono-caja">{{ m.icono('edificio', 28) }}</span>
+      <strong>Soy una empresa</strong>
+      <span>Presenta tu organización, publica vacantes y encuentra candidatos.</span>
+    </a>
+  </div>
+  <p class="pie-formulario">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+</section>
+{% endblock %}

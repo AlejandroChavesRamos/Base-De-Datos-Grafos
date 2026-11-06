@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}{{ o.titulo }}{% endblock %}
+{% block contenido %}
+{% set niveles = [(1, '1 · Básico'), (2, '2 · Intermedio'), (3, '3 · Competente'), (4, '4 · Avanzado'), (5, '5 · Experto')] %}
+<div class="grid-ancho">
+  <section class="tarjeta seccion">
+    <div class="encabezado-pagina">
+      <div>
+        <p class="sub"><a href="/empresa/{{ e.id }}/gestion">← {{ e.nombre }}</a></p>
+        <h1>{{ o.titulo }} <span class="chip estado-{{ o.estado }}">{{ o.estado|capitalize }}</span></h1>
+        <p class="sub">{{ o.ciudad }} · {{ o.modalidad }} · {{ o.salario_min|cop }} – {{ o.salario_max|cop }} · cierra el {{ o.fecha_cierre|fecha }}</p>
+      </div>
+      <div class="acciones">
+        {% if o.estado == 'borrador' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/publicar', 'Publicar oferta', 'btn btn-solido') }}{% endif %}
+        {% if o.estado == 'abierta' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/cerrar', 'Cerrar oferta', 'btn btn-borde') }}{% endif %}
+        {% if o.estado == 'cerrada' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/reabrir', 'Reabrir oferta', 'btn btn-borde') }}{% endif %}
+        <a class="btn btn-borde" href="/ofertas/{{ o.id }}/editar">Editar</a>
+      </div>
+    </div>
+    {% if o.estado == 'borrador' %}<p class="sub">Para publicar necesitas al menos un requisito. Al publicar, se avisa a las personas que buscan empleo y cumplen las habilidades obligatorias.</p>{% endif %}
+    <p class="texto-libre">{{ o.descripcion }}</p>
+  </section>
+
+  <section class="tarjeta seccion" id="requisitos">
+    <h2>Requisitos ({{ requisitos|length }})</h2>
+    {% for r in requisitos|sort(attribute='nombre') %}
+    <div class="fila-accion pad-fila">
+      <div><strong>{{ r.nombre }}</strong> <span class="sub">· nivel mínimo {{ r.nivel_minimo }}</span>
+        <span class="chip {{ 'chip-azul' if r.obligatoria }}">{{ 'Obligatoria' if r.obligatoria else 'Deseable' }}</span></div>
+      {{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/requisitos/' ~ r.id ~ '/quitar', 'Quitar') }}
+    </div>
+    {% else %}
+    {{ m.vacio('Sin requisitos', 'Agrega las habilidades que pides y el nivel mínimo de cada una.') }}
+    {% endfor %}
+    <h3>Agregar o actualizar un requisito</h3>
+    <form method="post" action="/ofertas/{{ o.id }}/requisitos" class="form-grid" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="campo">
+        <label for="f-habilidad_id">Habilidad</label>
+        <select id="f-habilidad_id" name="habilidad_id" required>
+          <option value="">Elige una habilidad</option>
+          {% for cat, items in catalogo|groupby('categoria') %}
+          <optgroup label="{{ cat|capitalize }}">{% for h in items %}<option value="{{ h.id }}">{{ h.nombre }}</option>{% endfor %}</optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      {{ m.seleccion('nivel_minimo', 'Nivel mínimo', niveles, '', {}) }}
+      {{ m.casilla('obligatoria', 'Obligatoria', false) }}
+      <button class="btn btn-solido" type="submit">Guardar requisito</button>
+    </form>
+  </section>
+
+  <section class="tarjeta seccion" id="postulantes">
+    <h2>Postulantes ({{ postulantes|length }})</h2>
+    <p class="sub">Ordenados por afinidad: requisitos cumplidos sobre requisitos pedidos, según las habilidades de su perfil.</p>
+    {% for x in postulantes %}
+    <article class="postulante">
+      <div class="persona">
+        <a href="/perfil/{{ x.usuario.id }}" tabindex="-1">{{ m.avatar(x.usuario.id, x.usuario.nombre, x.usuario.apellido, 48) }}</a>
+        <div class="persona-texto">
+          <a class="nombre" href="/perfil/{{ x.usuario.id }}">{{ x.usuario.nombre }} {{ x.usuario.apellido }}</a>
+          <div class="sub">{{ x.usuario.titular }} · {{ x.usuario.ciudad }}</div>
+          <div class="sub">Postulado {{ x.fecha|hace }}{% if x.conocidos %} · Conoce a {{ x.conocidos|join(', ') }}{% endif %}</div>
+          {% if x.faltan_obligatorias %}<div class="sub alerta-texto">Le falta: {{ x.faltan_obligatorias|join(', ') }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="postulante-acciones">
+        <span class="afinidad" title="{{ x.cumple }} de {{ x.total }} requisitos">{{ x.afinidad }}%</span>
+        <span class="chip estado-{{ x.estado }}">{{ x.estado|estado_texto }}</span>
+        <form method="post" action="/ofertas/{{ o.id }}/postulaciones/{{ x.usuario.id }}/estado" class="form-linea">
+          {{ m.csrf(yo) }}
+          <label class="solo-lectores" for="est-{{ x.usuario.id }}">Nuevo estado</label>
+          <select id="est-{{ x.usuario.id }}" name="estado" class="entrada-chica">
+            {% for clave, texto in estados.items() %}<option value="{{ clave }}" {{ 'selected' if clave == x.estado }}>{{ texto }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-borde btn-chico" type="submit">Actualizar</button>
+        </form>
+      </div>
+    </article>
+    {% else %}
+    {{ m.vacio('Aún no hay postulantes', 'Aparecerán aquí cuando las personas se postulen a esta oferta.') }}
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

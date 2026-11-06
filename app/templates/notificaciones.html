@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Notificaciones{% endblock %}
+{% block contenido %}
+<div class="grid-centrado">
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Notificaciones</h2>
+      {% if yo.sin_leer %}{{ m.boton_post(yo, '/notificaciones/leer-todas', 'Marcar todas como leídas') }}{% endif %}</header>
+    {% for item in lista %}
+    {% set n = item.n %}
+    <form method="post" action="/notificaciones/{{ n.id }}/leer">
+      {{ m.csrf(yo) }}
+      <button class="notificacion {{ 'sin-leer' if not n.leida }}" type="submit">
+        <span class="icono-caja">{{ m.icono('red' if n.tipo in ('conexion_solicitud', 'conexion_aceptada') else 'empleos', 22) }}</span>
+        <span class="notificacion-texto"><span>{{ n.mensaje }}</span><span class="sub">{{ n.fecha|hace }}</span></span>
+        {% if not n.leida %}<i class="punto-azul" aria-label="Sin leer"></i>{% endif %}
+      </button>
+    </form>
+    {% else %}
+    {{ m.vacio('No tienes notificaciones', 'Te avisaremos de nuevas invitaciones, postulaciones y ofertas afines.') }}
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

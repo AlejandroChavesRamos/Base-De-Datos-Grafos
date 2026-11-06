@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Configuración de cuenta{% endblock %}
+{% block contenido %}
+{% set ep = err.get('password', {}) %}{% set ee = err.get('eliminar', {}) %}
+<div class="grid-centrado grid-medio">
+  <section class="tarjeta seccion">
+    <h1>Configuración de cuenta</h1>
+    <p class="sub">Correo de acceso: <strong>{{ yo.email }}</strong> · Tipo de cuenta: {{ yo.tipo }}</p>
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2>Cambiar contraseña</h2>
+    <p class="sub">Al cambiarla se cerrarán tus demás sesiones abiertas.</p>
+    <form method="post" action="/cuenta/password" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('actual', 'Contraseña actual', {}, ep, tipo='password', auto='current-password') }}
+      {{ m.campo('nueva', 'Contraseña nueva', {}, ep, tipo='password', auto='new-password', ayuda='Mínimo 10 caracteres, con letras y números.') }}
+      {{ m.campo('nueva2', 'Repite la contraseña nueva', {}, ep, tipo='password', auto='new-password') }}
+      <button class="btn btn-solido" type="submit">Cambiar contraseña</button>
+    </form>
+  </section>
+
+  {% if yo.tipo in ('persona', 'empresa') %}
+  <section class="tarjeta seccion zona-peligro">
+    <h2>Eliminar cuenta</h2>
+    {% if yo.tipo == 'persona' %}
+    <p>Se borrarán tu perfil, tus habilidades, tu experiencia, tus conexiones, tus postulaciones y tus notificaciones. No se puede deshacer.</p>
+    {% else %}
+    <p>Se borrarán la empresa y todas sus ofertas, con sus requisitos y postulaciones. Las personas que trabajaron aquí conservarán su historial sin el vínculo. No se puede deshacer.</p>
+    {% endif %}
+    <form method="post" action="/cuenta/eliminar" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('password', 'Tu contraseña', {}, ee, tipo='password', auto='current-password') }}
+      <div class="campo campo-casilla">
+        <label><input type="checkbox" name="confirmar" {% if ee.confirmar %}aria-invalid="true"{% endif %}> Entiendo que es permanente</label>
+        {% if ee.confirmar %}<p class="error-campo">{{ ee.confirmar }}</p>{% endif %}
+      </div>
+      <button class="btn btn-peligro" type="submit">Eliminar mi cuenta</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

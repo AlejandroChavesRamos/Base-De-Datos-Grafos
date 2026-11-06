@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Crear cuenta de persona{% endblock %}
+{% block contenido %}
+<section class="tarjeta formulario formulario-ancho">
+  <h1>Crea tu perfil profesional</h1>
+  <p class="sub">Cuenta de persona. <a href="/registro">Cambiar tipo de cuenta</a></p>
+  {% if errores.general %}<p class="alerta" role="alert">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/registro/persona" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_previo }}">
+    <div class="campos-2">
+      {{ m.campo('nombre', 'Nombre', valores, errores, auto='given-name', maximo=60) }}
+      {{ m.campo('apellido', 'Apellido', valores, errores, auto='family-name', maximo=60) }}
+    </div>
+    {{ m.campo('titular', 'Titular profesional', valores, errores, ayuda='Por ejemplo: Ingeniera de datos.', requerido=false, maximo=120) }}
+    {{ m.campo('ciudad', 'Ciudad', valores, errores, auto='address-level2', maximo=60) }}
+    {{ m.campo('email', 'Correo electrónico', valores, errores, tipo='email', auto='email', maximo=254) }}
+    {{ m.campo('password', 'Contraseña', valores, errores, tipo='password', auto='new-password', ayuda='Mínimo 10 caracteres, con letras y números.') }}
+    {{ m.campo('password2', 'Repite la contraseña', valores, errores, tipo='password', auto='new-password') }}
+    <button class="btn btn-solido btn-ancho" type="submit">Crear cuenta</button>
+  </form>
+  <p class="pie-formulario">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+</section>
+{% endblock %}

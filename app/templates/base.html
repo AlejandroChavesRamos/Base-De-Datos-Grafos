@@ -1,0 +1,77 @@
+{% import "macros.html" as m -%}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}LinkedUn{% endblock %} | LinkedUn</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/estilos.css') }}">
+</head>
+<body>
+{% set r = ruta_actual|default('') %}
+<header class="navbar">
+  <div class="navbar-in">
+    <a class="logo" href="/" aria-label="LinkedUn, ir al inicio"><span class="logo-marca">Un</span></a>
+
+    {% if not yo %}
+    <nav class="nav-publico" aria-label="Acceso">
+      <a class="btn btn-borde" href="/registro">Unirse ahora</a>
+      <a class="btn btn-solido" href="/login">Iniciar sesión</a>
+    </nav>
+
+    {% elif yo.tipo == 'persona' %}
+    <form class="buscador" action="/buscar" method="get" role="search">
+      {{ m.icono('buscar', 16) }}
+      <input type="search" name="q" value="{{ q|default('', true) }}" placeholder="Buscar personas, empresas y empleos" aria-label="Buscar">
+    </form>
+    <nav class="nav-items" aria-label="Principal">
+      <a class="nav-item {{ 'activo' if r == '/' }}" href="/">{{ m.icono('inicio') }}<span>Inicio</span></a>
+      <a class="nav-item {{ 'activo' if r == '/red' }}" href="/red">{{ m.icono('red') }}<span>Mi red</span>
+        {% if yo.solicitudes %}<b class="insignia" aria-label="{{ yo.solicitudes }} invitaciones">{{ yo.solicitudes }}</b>{% endif %}</a>
+      <a class="nav-item {{ 'activo' if r == '/empleos' }}" href="/empleos">{{ m.icono('empleos') }}<span>Empleos</span></a>
+      <a class="nav-item {{ 'activo' if r == '/notificaciones' }}" href="/notificaciones">{{ m.icono('notificaciones') }}<span>Notificaciones</span>
+        {% if yo.sin_leer %}<b class="insignia" aria-label="{{ yo.sin_leer }} sin leer">{{ yo.sin_leer }}</b>{% endif %}</a>
+      <details class="nav-item menu-yo">
+        <summary>{{ m.avatar(yo.id, yo.nombre, yo.apellido, 24) }}<span>Yo</span></summary>
+        <div class="menu-panel">
+          <a href="/perfil/{{ yo.id }}">Ver perfil</a>
+          <a href="/perfil/editar">Editar perfil</a>
+          <a href="/proyectos">Proyectos</a>
+          {% if yo.rol_empresa == 'rrhh' and yo.empresa %}<a href="/empresa/{{ yo.empresa.id }}/gestion">Gestionar {{ yo.empresa.nombre }}</a>{% endif %}
+          <a href="/cuenta">Configuración de cuenta</a>
+          <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar sesión</button></form>
+          <form method="post" action="/logout-todas"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar todas mis sesiones</button></form>
+        </div>
+      </details>
+    </nav>
+
+    {% else %}
+    <nav class="nav-items" aria-label="Principal">
+      {% if yo.tipo == 'empresa' %}
+      <a class="nav-item" href="/empresa/{{ yo.id }}">{{ m.icono('edificio') }}<span>Mi empresa</span></a>
+      {% else %}
+      <a class="nav-item {{ 'activo' if r == '/admin' }}" href="/admin">{{ m.icono('usuario') }}<span>Panel</span></a>
+      {% endif %}
+      <details class="nav-item menu-yo">
+        <summary>{{ m.avatar(yo.id, yo.nombre, none, 24, yo.tipo == 'empresa') }}<span>{{ yo.tipo|capitalize }}</span></summary>
+        <div class="menu-panel">
+          {% if yo.tipo == 'empresa' %}<a href="/empresa/{{ yo.id }}/gestion">Gestionar empresa</a>{% endif %}
+          <a href="/cuenta">Configuración de cuenta</a>
+          <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar sesión</button></form>
+          <form method="post" action="/logout-todas"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar todas mis sesiones</button></form>
+        </div>
+      </details>
+    </nav>
+    {% endif %}
+  </div>
+</header>
+
+<main class="contenedor">
+  {% set cod_ok = request.query_params.get('aviso') %}{% set cod_err = request.query_params.get('error') %}
+  {% set n = request.query_params.get('n', '0') %}{% set n = n if n.isdigit() else '0' %}
+  {% if cod_ok in AVISOS.ok %}<p class="aviso-flash" role="status">{{ AVISOS.ok[cod_ok].replace('{n}', n) }}</p>
+  {% elif cod_err in AVISOS.error %}<p class="aviso-flash aviso-error" role="alert">{{ AVISOS.error[cod_err] }}</p>{% endif %}
+  {% block contenido %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Buscar{% endblock %}
+{% block contenido %}
+<div class="grid-centrado">
+  {% if r is none %}
+  <section class="tarjeta">{{ m.vacio('Busca en LinkedUn', 'Escribe el nombre de una persona, una empresa, un cargo o un sector.') }}</section>
+  {% else %}
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Personas</h2></header>
+    {% for x in r.personas %}<div class="pad-item">{{ m.persona(x.usuario, x.usuario.ciudad, 48) }}</div>
+    {% else %}{{ m.vacio('Sin personas', 'No hay personas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+  </section>
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Empresas</h2></header>
+    {% for x in r.empresas %}
+    <a class="fila-empleo" href="/empresa/{{ x.empresa.id }}">
+      {{ m.avatar(x.empresa.id, x.empresa.nombre, none, 48, true) }}
+      <div class="fila-empleo-texto"><strong>{{ x.empresa.nombre }}</strong><div class="sub">{{ x.empresa.sector }} · {{ x.empresa.ciudad }}</div></div>
+    </a>
+    {% else %}{{ m.vacio('Sin empresas', 'No hay empresas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+  </section>
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Empleos</h2></header>
+    {% for x in r.ofertas %}
+    <a class="fila-empleo" href="/empleos?oferta={{ x.oferta.id }}">
+      <div class="fila-empleo-texto"><strong>{{ x.oferta.titulo }}</strong><div class="sub">{{ x.empresa }} · {{ x.oferta.ciudad }}{{ ' · Cerrada' if x.oferta.estado != 'abierta' }}</div></div>
+    </a>
+    {% else %}{{ m.vacio('Sin empleos', 'No hay ofertas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

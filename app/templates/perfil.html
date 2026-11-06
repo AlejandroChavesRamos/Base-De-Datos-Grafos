@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}{{ p.usuario.nombre }} {{ p.usuario.apellido }}{% endblock %}
+{% block contenido %}
+{% set u = p.usuario %}
+<div class="grid-doble">
+  <div class="col-principal">
+
+    <section class="tarjeta cabecera-perfil">
+      <div class="banner banner-grande" style="background:linear-gradient(135deg, {{ u.id|color_avatar }}, #0a66c2)"></div>
+      <div class="cabecera-avatar">{{ m.avatar(u.id, u.nombre, u.apellido, 128) }}</div>
+      <div class="cabecera-cuerpo">
+        <h1>{{ u.nombre }} {{ u.apellido }}
+          {% if ruta %}<span class="grado" title="Grado de conexión contigo">{{ ruta.saltos|grado }}</span>{% endif %}</h1>
+        <p class="titular">{{ u.titular }}</p>
+        <p class="sub">
+          {{ m.icono('ubicacion', 14) }} {{ u.ciudad }}
+          · <a href="/red">{{ p.conexiones }} {{ 'contacto' if p.conexiones == 1 else 'contactos' }}</a>
+        </p>
+        {% if p.empresa %}
+        <a class="empresa-chip" href="/empresa/{{ p.empresa.id }}">
+          {{ m.avatar(p.empresa.id, p.empresa.nombre, none, 24, true) }} {{ p.empresa.nombre }}
+        </a>
+        {% endif %}
+        {% if u.buscando_empleo %}<p class="estado-busqueda">{{ m.icono('empleos', 14) }} Abierto a nuevas oportunidades</p>{% endif %}
+        <div class="acciones">
+          {% if es_propio %}
+            <a class="btn btn-solido" href="/perfil/editar">Editar perfil</a>
+          {% elif yo.tipo != 'persona' %}
+          {% elif relacion == 'conectado' %}
+            <span class="btn btn-estado">{{ m.icono('check', 16) }} Conectados</span>
+            {{ m.boton_post(yo, '/conexiones/eliminar/' ~ u.id, 'Eliminar contacto', volver=ruta_actual) }}
+          {% elif relacion == 'enviada' %}
+            <span class="btn btn-estado">Invitación enviada</span>
+            {{ m.boton_post(yo, '/conexiones/retirar/' ~ u.id, 'Retirar invitación', volver=ruta_actual) }}
+          {% elif relacion == 'recibida' %}
+            {{ m.boton_post(yo, '/conexiones/aceptar/' ~ u.id, 'Aceptar invitación', 'btn btn-solido', volver=ruta_actual) }}
+            {{ m.boton_post(yo, '/conexiones/ignorar/' ~ u.id, 'Ignorar', 'btn btn-borde', volver=ruta_actual) }}
+          {% else %}
+            {{ m.boton_post(yo, '/conexiones/solicitar/' ~ u.id, 'Conectar', 'btn btn-solido', volver=ruta_actual) }}
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    {% if u.resumen %}
+    <section class="tarjeta seccion"><h2>Acerca de</h2><p>{{ u.resumen }}</p>
+      <p class="sub">{{ u.experiencia_anios }} {{ 'año' if u.experiencia_anios == 1 else 'años' }} de experiencia</p></section>
+    {% endif %}
+
+    <section class="tarjeta seccion">
+      <h2>Experiencia</h2>
+      {% for x in p.experiencia %}
+      <div class="item-exp">
+        {{ m.avatar(x.empresa.id, x.empresa.nombre, none, 48, true) }}
+        <div>
+          <strong>{{ x.cargo }}</strong>
+          <div><a href="/empresa/{{ x.empresa.id }}">{{ x.empresa.nombre }}</a>
+            {% if x.rol == 'rrhh' %}<span class="chip chip-azul">Talento humano</span>{% endif %}</div>
+          <div class="sub">{{ x.desde|mes_anio }} – {{ 'actualidad' if x.actual else x.hasta|mes_anio }} · {{ x.desde|duracion(x.hasta) }}</div>
+        </div>
+      </div>
+      {% else %}
+      {{ m.vacio('Sin experiencia registrada', 'Aquí aparecerán los cargos de esta persona.') }}
+      {% endfor %}
+    </section>
+
+    <section class="tarjeta seccion">
+      <h2>Habilidades</h2>
+      <ul class="lista-hab">
+        {% for h in p.habilidades %}
+        <li><div><strong>{{ h.habilidad.nombre }}</strong><div class="sub">{{ h.habilidad.categoria|capitalize }} · {{ h.anios }} {{ 'año' if h.anios == 1 else 'años' }}</div></div>
+          <div class="hab-nivel">{{ m.nivel(h.nivel) }}<small>{{ h.nivel|nivel_texto }}</small></div></li>
+        {% else %}
+        <li>{{ m.vacio('Sin habilidades', 'Agrega habilidades para recibir mejores recomendaciones.') }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="tarjeta seccion">
+      <h2>Proyectos</h2>
+      {% for x in p.proyectos %}
+      <div class="item-exp">
+        <span class="icono-caja">{{ m.icono('proyecto', 24) }}</span>
+        <div>
+          <strong>{{ x.proyecto.nombre }}</strong>
+          <div class="sub">{{ x.rol }}{% if x.empresa %} · {{ x.empresa }}{% else %} · Proyecto independiente{% endif %} · {{ 'En curso' if x.proyecto.estado == 'en_curso' else 'Finalizado' }}</div>
+          <p>{{ x.proyecto.descripcion }}</p>
+          <div class="chips">{% for t in x.tecnologias %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+        </div>
+      </div>
+      {% else %}
+      {{ m.vacio('Sin proyectos', 'Los proyectos en los que participa aparecerán aquí.') }}
+      {% endfor %}
+    </section>
+  </div>
+
+  <aside class="col-lateral">
+    {% if not es_propio and yo.tipo == 'persona' %}
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Cómo estás conectado</h2></header>
+      {% if ruta %}
+        <p class="sub pad">{{ 'Contacto directo.' if ruta.saltos == 1 else 'A ' ~ ruta.saltos ~ ' saltos de ti.' }}</p>
+        <ol class="camino">
+          {% for n in ruta.ruta %}<li>{{ m.avatar(n.id, n.nombre, n.apellido, 32) }}<span>{{ n.nombre }} {{ n.apellido }}{{ ' (tú)' if loop.first }}</span></li>{% endfor %}
+        </ol>
+      {% else %}
+        <p class="sub pad">No hay una ruta de contactos entre ustedes todavía.</p>
+      {% endif %}
+      {% if en_comun %}
+      <div class="separador"></div>
+      <p class="pad"><strong>{{ en_comun|length }}</strong> {{ 'contacto en común' if en_comun|length == 1 else 'contactos en común' }}</p>
+      {% for c in en_comun %}<div class="pad-item">{{ m.persona(c.usuario, none, 40) }}</div>{% endfor %}
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Perfiles similares</h2></header>
+      {% for s in similares %}
+      <div class="pad-item">{{ m.persona(s.usuario, s.habilidades_comunes|join(', '), 40) }}</div>
+      {% else %}
+      {{ m.vacio('Sin perfiles similares', 'Aparecen cuando comparten habilidades con otras personas.') }}
+      {% endfor %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

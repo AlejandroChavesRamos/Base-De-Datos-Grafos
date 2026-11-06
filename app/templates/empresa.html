@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}{{ e.empresa.nombre }}{% endblock %}
+{% block contenido %}
+{% set emp = e.empresa %}
+<div class="grid-doble">
+  <div class="col-principal">
+    <section class="tarjeta cabecera-perfil">
+      <div class="banner banner-grande" style="background:linear-gradient(135deg, {{ emp.id|color_avatar }}, #0a66c2)"></div>
+      <div class="cabecera-avatar">{{ m.avatar(emp.id, emp.nombre, none, 112, true) }}</div>
+      <div class="cabecera-cuerpo">
+        <h1>{{ emp.nombre }}</h1>
+        <p class="titular">{{ emp.descripcion }}</p>
+        <p class="sub">{{ emp.sector }} · {{ m.icono('ubicacion', 14) }} {{ emp.ciudad }} · Empresa {{ emp.tamano }}
+          · {{ e.empleados }} {{ 'persona' if e.empleados == 1 else 'personas' }} en LinkedUn</p>
+        {% if emp.sitio_web %}<p class="sub">{{ emp.sitio_web }}</p>{% endif %}
+        {% if gestiona %}<div class="acciones"><a class="btn btn-solido" href="/empresa/{{ emp.id }}/gestion">Gestionar ofertas</a></div>{% endif %}
+      </div>
+    </section>
+
+    <section class="tarjeta seccion">
+      <h2>Empleos abiertos</h2>
+      {% for o in e.ofertas %}
+      <a class="fila-empleo" href="/empleos?oferta={{ o.oferta.id }}">
+        <div class="fila-empleo-texto"><strong>{{ o.oferta.titulo }}</strong>
+          <div class="sub">{{ o.oferta.ciudad }} · {{ o.oferta.modalidad }} · publicada {{ o.oferta.fecha_publicacion|hace }}</div></div>
+      </a>
+      {% else %}
+      {{ m.vacio('Sin empleos abiertos', 'Esta empresa no tiene ofertas publicadas en este momento.') }}
+      {% endfor %}
+    </section>
+  </div>
+
+  <aside class="col-lateral">
+    {% if yo.tipo == 'persona' %}
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Cómo llegas a esta empresa</h2></header>
+      {% if e.camino %}
+        <p class="sub pad">{{ e.camino.saltos }} {{ 'salto' if e.camino.saltos == 1 else 'saltos' }} desde tu red.</p>
+        <ol class="camino">
+          {% for n in e.camino.ruta %}<li><span class="punto"></span><span>{{ n }}</span></li>{% endfor %}
+        </ol>
+      {% else %}
+        <p class="sub pad">Tu red todavía no llega a esta empresa.</p>
+      {% endif %}
+    </section>
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Tus contactos aquí</h2></header>
+      {% for c in e.contactos %}
+      <div class="pad-item">{{ m.persona({'id': c.usuario.id, 'nombre': c.usuario.nombre, 'apellido': c.usuario.apellido, 'titular': c.cargo}, none, 40) }}</div>
+      {% else %}
+      {{ m.vacio('Ningún contacto trabaja aquí', 'Conecta con personas de esta empresa para llegar más fácil.') }}
+      {% endfor %}
+    </section>
+    {% elif yo.tipo == 'empresa' and yo.id == emp.id %}
+    <section class="tarjeta seccion">
+      <h2>Tu empresa</h2>
+      <p class="sub">Esta es la página que ven los profesionales. Desde “Gestionar ofertas” publicas vacantes y revisas postulantes.</p>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

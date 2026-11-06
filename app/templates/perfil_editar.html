@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Editar perfil{% endblock %}
+{% block contenido %}
+{% set u = p.usuario %}
+{% set niveles = [(1, '1 · Básico'), (2, '2 · Intermedio'), (3, '3 · Competente'), (4, '4 · Avanzado'), (5, '5 · Experto')] %}
+{% set ep = err.get('perfil', {}) %}{% set vp = val.get('perfil') or u %}
+{% set eh = err.get('habilidad', {}) %}{% set vh = val.get('habilidad') or {} %}
+{% set ee = err.get('experiencia', {}) %}{% set ve = val.get('experiencia') or {} %}
+<div class="grid-centrado grid-medio">
+
+  <section class="tarjeta seccion">
+    <div class="encabezado-pagina"><h1>Editar perfil</h1><a href="/perfil/{{ u.id }}">Ver mi perfil</a></div>
+    <form method="post" action="/perfil/editar" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="campos-2">
+        {{ m.campo('nombre', 'Nombre', vp, ep, auto='given-name', maximo=60) }}
+        {{ m.campo('apellido', 'Apellido', vp, ep, auto='family-name', maximo=60) }}
+      </div>
+      {{ m.campo('titular', 'Titular profesional', vp, ep, requerido=false, maximo=120) }}
+      <div class="campos-2">
+        {{ m.campo('ciudad', 'Ciudad', vp, ep, maximo=60) }}
+        {{ m.campo('experiencia_anios', 'Años de experiencia', vp, ep, tipo='number') }}
+      </div>
+      {{ m.area('resumen', 'Acerca de ti', vp, ep, filas=4, maximo=1000) }}
+      {{ m.casilla('buscando_empleo', 'Estoy abierto a nuevas oportunidades (recibirás avisos de ofertas afines)', vp.get('buscando_empleo')) }}
+      <button class="btn btn-solido" type="submit">Guardar cambios</button>
+    </form>
+  </section>
+
+  <section class="tarjeta seccion" id="habilidades">
+    <h2>Habilidades</h2>
+    <ul class="lista-hab">
+      {% for h in p.habilidades %}
+      <li class="fila-accion">
+        <div><strong>{{ h.habilidad.nombre }}</strong><div class="sub">{{ h.habilidad.categoria|capitalize }} · {{ h.anios }} {{ 'año' if h.anios == 1 else 'años' }}</div></div>
+        <div class="hab-nivel">{{ m.nivel(h.nivel) }}<small>{{ h.nivel|nivel_texto }}</small></div>
+        {{ m.boton_post(yo, '/perfil/habilidades/' ~ h.habilidad.id ~ '/quitar', 'Quitar') }}
+      </li>
+      {% else %}
+      <li>{{ m.vacio('Aún no tienes habilidades', 'Agrégalas abajo: mejoran tus recomendaciones de empleo.') }}</li>
+      {% endfor %}
+    </ul>
+    <h3>Agregar o actualizar una habilidad</h3>
+    <p class="sub">Si ya la tienes, se actualizan su nivel y años.</p>
+    <form method="post" action="/perfil/habilidades" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="campo">
+        <label for="f-habilidad_id">Habilidad</label>
+        <select id="f-habilidad_id" name="habilidad_id" required {% if eh.habilidad_id %}aria-invalid="true" aria-describedby="e-habilidad_id"{% endif %}>
+          <option value="">Elige una habilidad</option>
+          {% for cat, items in catalogo|groupby('categoria') %}
+          <optgroup label="{{ cat|capitalize }}">
+            {% for h in items %}<option value="{{ h.id }}" {{ 'selected' if vh.get('habilidad_id') == h.id }}>{{ h.nombre }}</option>{% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        {% if eh.habilidad_id %}<p class="error-campo" id="e-habilidad_id">{{ eh.habilidad_id }}</p>{% endif %}
+      </div>
+      <div class="campos-2">
+        {{ m.seleccion('nivel', 'Nivel', niveles, vh.get('nivel'), eh) }}
+        {{ m.campo('anios', 'Años de experiencia', vh, eh, tipo='number', requerido=false) }}
+      </div>
+      <button class="btn btn-solido" type="submit">Guardar habilidad</button>
+    </form>
+  </section>
+
+  <section class="tarjeta seccion" id="experiencia">
+    <h2>Experiencia laboral</h2>
+    {% for x in p.experiencia %}
+    <div class="item-exp fila-accion">
+      <div class="item-exp-cuerpo">
+        {{ m.avatar(x.empresa.id, x.empresa.nombre, none, 48, true) }}
+        <div><strong>{{ x.cargo }}</strong>
+          <div>{{ x.empresa.nombre }}{% if x.rol == 'rrhh' %} <span class="chip chip-azul">Talento humano</span>{% endif %}</div>
+          <div class="sub">{{ x.desde|mes_anio }} – {{ 'actualidad' if x.actual else x.hasta|mes_anio }} · {{ x.desde|duracion(x.hasta) }}</div></div>
+      </div>
+      {{ m.boton_post(yo, '/perfil/experiencia/quitar', 'Eliminar', campos={'empresa_id': x.empresa.id, 'desde': x.desde_iso}) }}
+    </div>
+    {% else %}
+    {{ m.vacio('Sin experiencia registrada', 'Agrega tu empleo actual o anteriores.') }}
+    {% endfor %}
+    <h3>Agregar experiencia</h3>
+    <p class="sub">Solo puedes tener un empleo actual: si agregas uno nuevo como actual, el anterior se cierra automáticamente.</p>
+    <form method="post" action="/perfil/experiencia" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.seleccion('empresa_id', 'Empresa', empresas, ve.get('empresa_id'), ee, 'Elige una empresa') }}
+      {{ m.campo('cargo', 'Cargo', ve, ee, maximo=100) }}
+      <div class="campos-2">
+        {{ m.campo('desde', 'Desde', ve, ee, tipo='date') }}
+        {{ m.campo('hasta', 'Hasta', ve, ee, tipo='date', requerido=false, ayuda='Déjalo vacío si es tu empleo actual.') }}
+      </div>
+      {{ m.casilla('actual', 'Es mi empleo actual', ve.get('actual')) }}
+      <button class="btn btn-solido" type="submit">Agregar experiencia</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

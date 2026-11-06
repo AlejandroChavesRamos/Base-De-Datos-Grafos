@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Proyectos{% endblock %}
+{% block contenido %}
+{% set f = val.get('f') or {} %}{% set techs_sel = val.get('techs') or [] %}
+{% set estados = [('en_curso', 'En curso'), ('finalizado', 'Finalizado')] %}
+<div class="grid-centrado grid-medio">
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Proyectos de la red</h2><small>{{ proyectos|length }}</small></header>
+    {% for x in proyectos %}
+    {% set p = x.proyecto %}
+    <article class="proyecto">
+      <div class="item-exp">
+        <span class="icono-caja">{{ m.icono('proyecto', 24) }}</span>
+        <div>
+          <strong>{{ p.nombre }}</strong>
+          <div class="sub">{{ 'En curso' if p.estado == 'en_curso' else 'Finalizado' }} · {{ x.empresa or 'Proyecto independiente' }} · {{ x.miembros }} {{ 'participante' if x.miembros == 1 else 'participantes' }}</div>
+          <p class="texto-libre">{{ p.descripcion }}</p>
+          <div class="chips">{% for t in x.tecnologias %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+        </div>
+      </div>
+      <div class="acciones acciones-proyecto">
+        {% if x.mi_rol %}
+          <span class="btn btn-estado">{{ m.icono('check', 16) }} Participas como {{ x.mi_rol }}</span>
+          {{ m.boton_post(yo, '/proyectos/' ~ p.id ~ '/salir', 'Salir del proyecto', volver='/proyectos') }}
+        {% else %}
+          <form method="post" action="/proyectos/{{ p.id }}/unirse" class="form-linea">
+            {{ m.csrf(yo) }}<input type="hidden" name="volver" value="/proyectos">
+            <label class="solo-lectores" for="rol-{{ p.id }}">Tu rol</label>
+            <input id="rol-{{ p.id }}" name="rol" class="entrada-chica" placeholder="Tu rol (opcional)" maxlength="60">
+            <button class="btn btn-borde btn-chico" type="submit">Unirme</button>
+          </form>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    {{ m.vacio('Aún no hay proyectos', 'Crea el primero con el formulario de abajo.') }}
+    {% endfor %}
+  </section>
+
+  <section class="tarjeta seccion" id="nuevo">
+    <h2>Crear un proyecto</h2>
+    <p class="sub">Quedarás como participante. Las tecnologías conectan tu proyecto con otros similares.</p>
+    <form method="post" action="/proyectos" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('nombre', 'Nombre del proyecto', f, err, maximo=120) }}
+      {{ m.area('descripcion', 'Descripción', f, err, filas=3, maximo=600) }}
+      <div class="campos-2">
+        {{ m.seleccion('estado', 'Estado', estados, f.get('estado'), err) }}
+        {{ m.campo('rol', 'Tu rol en el proyecto', f, err, maximo=60) }}
+      </div>
+      <div class="campos-2">
+        {{ m.campo('fecha_inicio', 'Fecha de inicio', f, err, tipo='date') }}
+        {{ m.campo('fecha_fin', 'Fecha de fin', f, err, tipo='date', requerido=false, ayuda='Solo si está finalizado.') }}
+      </div>
+      <div class="campo">
+        <label for="f-techs">Tecnologías y habilidades <span class="opcional">(opcional, hasta 10)</span></label>
+        <select id="f-techs" name="techs" multiple size="7" {% if err.techs %}aria-invalid="true" aria-describedby="e-techs"{% endif %}>
+          {% for cat, items in catalogo|groupby('categoria') %}
+          <optgroup label="{{ cat|capitalize }}">
+            {% for h in items %}<option value="{{ h.id }}" {{ 'selected' if h.id in techs_sel }}>{{ h.nombre }}</option>{% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        <p class="ayuda" id="a-techs">Mantén Ctrl (o Cmd) para elegir varias.</p>
+        {% if err.techs %}<p class="error-campo" id="e-techs">{{ err.techs }}</p>{% endif %}
+      </div>
+      {% if yo.empresa %}{{ m.casilla('con_empresa', 'Asociar el proyecto a ' ~ yo.empresa.nombre, f.get('con_empresa')) }}{% endif %}
+      <button class="btn btn-solido" type="submit">Crear proyecto</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

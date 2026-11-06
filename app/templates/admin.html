@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Panel{% endblock %}
+{% block contenido %}
+<div class="grid-ancho">
+  <section class="tarjeta seccion">
+    <h1>Panel de {{ yo.tipo }}</h1>
+    <p class="sub">Sesión como {{ yo.email }} · Permisos: {{ yo.permisos|sort|join(', ') }}</p>
+    {% if mensaje %}<p class="alerta alerta-ok" role="status">Cambio aplicado.</p>{% endif %}
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2>Cuentas ({{ cuentas|length }})</h2>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th scope="col">Perfil</th><th scope="col">Correo</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col"><span class="solo-lectores">Acción</span></th></tr></thead>
+        <tbody>
+        {% for c in cuentas %}
+          <tr>
+            <td>{{ c.perfil }}</td><td>{{ c.email }}</td><td>{{ c.tipo }}</td>
+            <td>{% if not c.activa %}<span class="chip estado-rechazada">Desactivada</span>
+                {% elif c.bloqueo_temporal %}<span class="chip estado-en_revision">Bloqueo temporal</span>
+                {% else %}<span class="chip estado-aceptada">Activa</span>{% endif %}</td>
+            <td>
+              {% if c.id != yo.cuenta_id and (c.tipo not in ('staff', 'admin') or puede_gestionar_staff) %}
+              <form method="post" action="/admin/cuentas/{{ c.id }}/estado">
+                <input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}">
+                <input type="hidden" name="activa" value="{{ 'false' if c.activa else 'true' }}">
+                <button class="btn {{ 'btn-borde' if c.activa else 'btn-solido' }} btn-chico" type="submit">{{ 'Desactivar' if c.activa else 'Activar' }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if puede_auditar %}
+  <section class="tarjeta seccion">
+    <h2>Registro de actividad</h2>
+    <div class="tabla-scroll">
+      <table class="tabla">
+        <thead><tr><th scope="col">Cuándo</th><th scope="col">Evento</th><th scope="col">Cuenta</th><th scope="col">IP</th><th scope="col">Detalle</th></tr></thead>
+        <tbody>
+        {% for x in eventos %}
+          <tr><td>{{ x.evento.fecha|hace }}</td><td>{{ x.evento.tipo }}</td><td>{{ x.email or '-' }}</td><td>{{ x.evento.ip }}</td><td>{{ x.evento.detalle }}</td></tr>
+        {% else %}
+          <tr><td colspan="5">{{ m.vacio('Sin eventos', 'Aún no se ha registrado actividad.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <section class="tarjeta seccion"><p class="sub">El registro de actividad solo está disponible para administradores.</p></section>
+  {% endif %}
+</div>
+{% endblock %}

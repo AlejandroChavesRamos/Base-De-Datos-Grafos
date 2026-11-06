@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Editar empresa{% endblock %}
+{% block contenido %}
+<section class="tarjeta formulario formulario-ancho">
+  <h1>Datos de la empresa</h1>
+  <p class="sub"><a href="/empresa/{{ e.id }}/gestion">Volver a la gestión</a></p>
+  <form method="post" action="/empresa/{{ e.id }}/editar" novalidate>
+    {{ m.csrf(yo) }}
+    {{ m.campo('nombre', 'Nombre de la empresa', val, err, maximo=100) }}
+    <div class="campos-2">
+      {{ m.seleccion('sector', 'Sector', sectores, val.get('sector'), err) }}
+      {{ m.seleccion('tamano', 'Tamaño', tamanos, val.get('tamano'), err) }}
+    </div>
+    {{ m.campo('ciudad', 'Ciudad', val, err, maximo=60) }}
+    {{ m.campo('sitio_web', 'Sitio web', val, err, tipo='url', requerido=false, ayuda='Debe empezar por https://', maximo=200) }}
+    {{ m.area('descripcion', 'Descripción', val, err, filas=3, maximo=400) }}
+    <button class="btn btn-solido" type="submit">Guardar cambios</button>
+  </form>
+</section>
+{% endblock %}

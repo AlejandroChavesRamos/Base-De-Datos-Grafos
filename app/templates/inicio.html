@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<div class="grid-inicio">
+
+  <aside class="col-izq" aria-label="Tu perfil">
+    <section class="tarjeta perfil-mini">
+      <div class="banner" style="background:linear-gradient(135deg, {{ yo.id|color_avatar }}, #0a66c2)"></div>
+      <a class="perfil-mini-avatar" href="/perfil/{{ yo.id }}" tabindex="-1">{{ m.avatar(yo.id, yo.nombre, yo.apellido, 72) }}</a>
+      <div class="perfil-mini-texto">
+        <a class="nombre" href="/perfil/{{ yo.id }}">{{ yo.nombre }} {{ yo.apellido }}</a>
+        <div class="sub">{{ yo.titular }}</div>
+        {% if yo.empresa %}<div class="sub">{{ yo.empresa.nombre }}</div>{% endif %}
+      </div>
+      <a class="fila-dato" href="/red"><span>Contactos</span><strong>{{ yo.conexiones }}</strong></a>
+      <a class="fila-dato" href="/empleos"><span>Postulaciones</span><strong>{{ yo.postulaciones }}</strong></a>
+    </section>
+    <section class="tarjeta enlaces-rapidos">
+      <a href="/red">{{ m.icono('red', 18) }} Mi red</a>
+      <a href="/empleos">{{ m.icono('empleos', 18) }} Empleos para ti</a>
+      <a href="/proyectos">{{ m.icono('proyecto', 18) }} Proyectos</a>
+      <a href="/notificaciones">{{ m.icono('notificaciones', 18) }} Notificaciones</a>
+    </section>
+  </aside>
+
+  <section class="col-centro" aria-label="Novedades">
+    {% if yo.solicitudes %}
+    <a class="tarjeta aviso" href="/red">
+      {{ m.icono('red', 20) }}
+      <span>Tienes <strong>{{ yo.solicitudes }}</strong> {{ 'invitación pendiente' if yo.solicitudes == 1 else 'invitaciones pendientes' }} para conectar.</span>
+    </a>
+    {% endif %}
+
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Empleos recomendados para ti</h2><a href="/empleos">Ver todos</a></header>
+      {% for e in empleos %}
+      <a class="fila-empleo" href="/empleos?oferta={{ e.oferta.id }}">
+        {{ m.avatar(e.empresa.id, e.empresa.nombre, none, 48, true) }}
+        <div class="fila-empleo-texto">
+          <strong>{{ e.oferta.titulo }}</strong>
+          <div class="sub">{{ e.empresa.nombre }} · {{ e.oferta.ciudad }} · {{ e.oferta.modalidad }}</div>
+          <div class="sub">Cumples {{ e.cumple }} de {{ e.total_req }} requisitos
+            {%- if e.contactos %} · {{ e.contactos|length }} {{ 'contacto trabaja' if e.contactos|length == 1 else 'contactos trabajan' }} aquí{% endif %}</div>
+        </div>
+        <span class="afinidad" title="Afinidad con tus habilidades">{{ e.afinidad }}%</span>
+      </a>
+      {% else %}
+      {{ m.vacio('Aún no hay recomendaciones', 'Agrega habilidades a tu perfil para ver empleos afines.') }}
+      {% endfor %}
+    </section>
+
+    {% for a in actividad %}
+    <article class="tarjeta post">
+      <header class="persona">
+        <a href="/perfil/{{ a.contacto.id }}" tabindex="-1">{{ m.avatar(a.contacto.id, a.contacto.nombre, a.contacto.apellido, 48) }}</a>
+        <div class="persona-texto">
+          <a class="nombre" href="/perfil/{{ a.contacto.id }}">{{ a.contacto.nombre }} {{ a.contacto.apellido }}</a>
+          <div class="sub">{{ a.contacto.titular }}</div>
+          <div class="sub">{{ a.fecha|hace }}</div>
+        </div>
+      </header>
+      {% if a.tipo == 'oferta' %}
+      <p>Trabaja en <a href="/empresa/{{ a.empresa.id }}"><strong>{{ a.empresa.nombre }}</strong></a>, que está contratando.</p>
+      <a class="adjunto" href="/empleos?oferta={{ a.oferta.id }}">
+        {{ m.avatar(a.empresa.id, a.empresa.nombre, none, 56, true) }}
+        <div><strong>{{ a.oferta.titulo }}</strong>
+          <div class="sub">{{ a.empresa.nombre }} · {{ a.oferta.ciudad }} · {{ a.oferta.modalidad }}</div></div>
+      </a>
+      {% else %}
+      <p>Participa como <strong>{{ a.rol }}</strong> en el proyecto <strong>{{ a.proyecto.nombre }}</strong>.</p>
+      <a class="adjunto adjunto-proyecto" href="/perfil/{{ a.contacto.id }}">
+        <span class="icono-caja">{{ m.icono('proyecto', 28) }}</span>
+        <div><strong>{{ a.proyecto.nombre }}</strong>
+          <div class="sub">{{ a.proyecto.descripcion }}</div>
+          <div class="chips">{% for t in a.tecnologias %}<span class="chip">{{ t }}</span>{% endfor %}</div></div>
+      </a>
+      {% endif %}
+    </article>
+    {% else %}
+    <section class="tarjeta">{{ m.vacio('Tu red aún está tranquila', 'Cuando tus contactos publiquen ofertas o participen en proyectos, lo verás aquí.') }}</section>
+    {% endfor %}
+  </section>
+
+  <aside class="col-der" aria-label="Sugerencias">
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Personas que quizás conozcas</h2></header>
+      {% for s in sugerencias %}
+      <div class="sugerencia">
+        {{ m.persona(s.usuario, s.amigos_comunes ~ (' contacto en común' if s.amigos_comunes == 1 else ' contactos en común'), 48) }}
+      </div>
+      {% else %}
+      {{ m.vacio('Sin sugerencias por ahora', 'Conecta con más personas para recibir sugerencias.') }}
+      {% endfor %}
+    </section>
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Habilidades más pedidas</h2></header>
+      <ol class="barras">
+        {% set maximo = (demanda|map(attribute='ofertas')|max) if demanda else 1 %}
+        {% for d in demanda %}
+        <li><span>{{ d.habilidad }}</span>
+          <div class="barra"><i style="width:{{ (d.ofertas / maximo * 100)|round|int }}%"></i></div>
+          <small>{{ d.ofertas }} {{ 'oferta' if d.ofertas == 1 else 'ofertas' }}</small></li>
+        {% endfor %}
+      </ol>
+    </section>
+  </aside>
+</div>
+{% endblock %}

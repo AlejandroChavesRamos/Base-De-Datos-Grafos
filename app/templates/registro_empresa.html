@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Crear cuenta de empresa{% endblock %}
+{% block contenido %}
+<section class="tarjeta formulario formulario-ancho">
+  <h1>Registra tu empresa</h1>
+  <p class="sub">Cuenta de empresa. <a href="/registro">Cambiar tipo de cuenta</a></p>
+  {% if errores.general %}<p class="alerta" role="alert">{{ errores.general }}</p>{% endif %}
+  <form method="post" action="/registro/empresa" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_previo }}">
+    {{ m.campo('nombre', 'Nombre de la empresa', valores, errores, auto='organization', maximo=100) }}
+    <div class="campos-2">
+      <div class="campo">
+        <label for="f-sector">Sector</label>
+        <select id="f-sector" name="sector" required {% if errores.sector %}aria-invalid="true" aria-describedby="e-sector"{% endif %}>
+          <option value="">Elige un sector</option>
+          {% for s in sectores %}<option value="{{ s }}" {{ 'selected' if valores.get('sector') == s }}>{{ s }}</option>{% endfor %}
+        </select>
+        {% if errores.sector %}<p class="error-campo" id="e-sector">{{ errores.sector }}</p>{% endif %}
+      </div>
+      <div class="campo">
+        <label for="f-tamano">Tamaño</label>
+        <select id="f-tamano" name="tamano" required {% if errores.tamano %}aria-invalid="true" aria-describedby="e-tamano"{% endif %}>
+          <option value="">Elige el tamaño</option>
+          {% for clave, texto in tamanos.items() %}<option value="{{ clave }}" {{ 'selected' if valores.get('tamano') == clave }}>{{ texto }}</option>{% endfor %}
+        </select>
+        {% if errores.tamano %}<p class="error-campo" id="e-tamano">{{ errores.tamano }}</p>{% endif %}
+      </div>
+    </div>
+    {{ m.campo('ciudad', 'Ciudad', valores, errores, auto='address-level2', maximo=60) }}
+    {{ m.campo('sitio_web', 'Sitio web', valores, errores, tipo='url', ayuda='Debe empezar por https://', requerido=false, maximo=200) }}
+    {{ m.campo('descripcion', 'Descripción breve', valores, errores, requerido=false, maximo=400) }}
+    {{ m.campo('email', 'Correo de la cuenta', valores, errores, tipo='email', auto='email', maximo=254) }}
+    {{ m.campo('password', 'Contraseña', valores, errores, tipo='password', auto='new-password', ayuda='Mínimo 10 caracteres, con letras y números.') }}
+    {{ m.campo('password2', 'Repite la contraseña', valores, errores, tipo='password', auto='new-password') }}
+    <button class="btn btn-solido btn-ancho" type="submit">Registrar empresa</button>
+  </form>
+  <p class="pie-formulario">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
+</section>
+{% endblock %}

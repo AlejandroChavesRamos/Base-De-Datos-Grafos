@@ -1,0 +1,90 @@
+{# Macros reutilizables: iconos, avatares y piezas pequenas #}
+
+{% macro icono(nombre, tam=24) -%}
+<svg class="icono" width="{{ tam }}" height="{{ tam }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if nombre == 'inicio' %}<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+{%- elif nombre == 'red' %}<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+{%- elif nombre == 'empleos' %}<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+{%- elif nombre == 'notificaciones' %}<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+{%- elif nombre == 'usuario' %}<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+{%- elif nombre == 'buscar' %}<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+{%- elif nombre == 'ubicacion' %}<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+{%- elif nombre == 'edificio' %}<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>
+{%- elif nombre == 'check' %}<polyline points="20 6 9 17 4 12"/>
+{%- elif nombre == 'x' %}<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+{%- elif nombre == 'proyecto' %}<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+{%- elif nombre == 'mensaje' %}<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/>
+{%- elif nombre == 'estrella' %}<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
+{% macro avatar(id, nombre, apellido=none, tam=48, cuadrado=false) -%}
+<span class="avatar{% if cuadrado %} avatar-cuadrado{% endif %}" style="width:{{ tam }}px;height:{{ tam }}px;font-size:{{ (tam * 0.38)|round|int }}px;background:{{ id|color_avatar }}" aria-hidden="true">{{ nombre|iniciales(apellido) }}</span>
+{%- endmacro %}
+
+{% macro persona(u, detalle=none, tam=48) -%}
+<div class="persona">
+  <a href="/perfil/{{ u.id }}" tabindex="-1">{{ avatar(u.id, u.nombre, u.apellido, tam) }}</a>
+  <div class="persona-texto">
+    <a class="nombre" href="/perfil/{{ u.id }}">{{ u.nombre }} {{ u.apellido }}</a>
+    {% if u.titular %}<div class="sub">{{ u.titular }}</div>{% endif %}
+    {% if detalle %}<div class="sub">{{ detalle }}</div>{% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro nivel(n) -%}
+<span class="nivel" role="img" aria-label="Nivel {{ n }} de 5">{% for i in range(1, 6) %}<i class="{{ 'on' if i <= n }}"></i>{% endfor %}</span>
+{%- endmacro %}
+
+{% macro vacio(titulo, texto) -%}
+<div class="vacio"><strong>{{ titulo }}</strong><p>{{ texto }}</p></div>
+{%- endmacro %}
+
+{% macro campo(nombre, etiqueta, valores, errores, tipo='text', auto='', ayuda='', requerido=true, maximo=none) -%}
+<div class="campo">
+  <label for="f-{{ nombre }}">{{ etiqueta }}{% if not requerido %} <span class="opcional">(opcional)</span>{% endif %}</label>
+  <input id="f-{{ nombre }}" name="{{ nombre }}" type="{{ tipo }}" {% if tipo != 'password' %}value="{{ valores.get(nombre, '') }}"{% endif %}
+         {% if auto %}autocomplete="{{ auto }}"{% endif %} {% if requerido %}required{% endif %} {% if maximo %}maxlength="{{ maximo }}"{% endif %}
+         {% if errores.get(nombre) %}aria-invalid="true" aria-describedby="e-{{ nombre }}"{% elif ayuda %}aria-describedby="a-{{ nombre }}"{% endif %}>
+  {% if errores.get(nombre) %}<p class="error-campo" id="e-{{ nombre }}">{{ errores[nombre] }}</p>
+  {% elif ayuda %}<p class="ayuda" id="a-{{ nombre }}">{{ ayuda }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro boton_post(yo, url, texto, clase='btn btn-borde btn-chico', volver=none, campos={}) -%}
+<form method="post" action="{{ url }}" class="form-linea">
+  <input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}">
+  {% if volver %}<input type="hidden" name="volver" value="{{ volver }}">{% endif %}
+  {% for k, v in campos.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <button class="{{ clase }}" type="submit">{{ texto }}</button>
+</form>
+{%- endmacro %}
+
+{% macro csrf(yo) -%}<input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}">{%- endmacro %}
+
+{% macro seleccion(nombre, etiqueta, opciones, valor, errores, vacio='Elige una opción') -%}
+<div class="campo">
+  <label for="f-{{ nombre }}">{{ etiqueta }}</label>
+  <select id="f-{{ nombre }}" name="{{ nombre }}" required {% if errores.get(nombre) %}aria-invalid="true" aria-describedby="e-{{ nombre }}"{% endif %}>
+    <option value="">{{ vacio }}</option>
+    {% for v, t in opciones %}<option value="{{ v }}" {{ 'selected' if (valor|string) == (v|string) }}>{{ t }}</option>{% endfor %}
+  </select>
+  {% if errores.get(nombre) %}<p class="error-campo" id="e-{{ nombre }}">{{ errores[nombre] }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro area(nombre, etiqueta, valores, errores, filas=4, maximo=1000, requerido=false) -%}
+<div class="campo">
+  <label for="f-{{ nombre }}">{{ etiqueta }}{% if not requerido %} <span class="opcional">(opcional)</span>{% endif %}</label>
+  <textarea id="f-{{ nombre }}" name="{{ nombre }}" rows="{{ filas }}" maxlength="{{ maximo }}" {% if requerido %}required{% endif %}
+            {% if errores.get(nombre) %}aria-invalid="true" aria-describedby="e-{{ nombre }}"{% endif %}>{{ valores.get(nombre, '') }}</textarea>
+  {% if errores.get(nombre) %}<p class="error-campo" id="e-{{ nombre }}">{{ errores[nombre] }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro casilla(nombre, etiqueta, marcada) -%}
+<div class="campo campo-casilla"><label><input type="checkbox" name="{{ nombre }}" {{ 'checked' if marcada }}> {{ etiqueta }}</label></div>
+{%- endmacro %}
+

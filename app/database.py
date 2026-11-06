@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Neo4jConexion:
     def __init__(self):
         self._database = os.getenv("NEO4J_DATABASE", "neo4j")
@@ -29,5 +30,6 @@ class Neo4jConexion:
             return sesion.execute_write(
                 lambda tx: [r.data() for r in tx.run(consulta, **params)]
             )
+
 
 db = Neo4jConexion()

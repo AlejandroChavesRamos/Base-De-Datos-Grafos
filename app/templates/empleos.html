@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Empleos{% endblock %}
+{% block contenido %}
+<div class="grid-empleos">
+  <section class="tarjeta lista-empleos" aria-label="Empleos recomendados">
+    <header class="tarjeta-cab"><h2>Empleos para ti</h2><small>{{ lista|length }} {{ 'abierto' if lista|length == 1 else 'abiertos' }}</small></header>
+    {% for e in lista %}
+    <a class="fila-empleo {{ 'seleccionado' if e.oferta.id == id_sel }}" href="/empleos?oferta={{ e.oferta.id }}" {% if e.oferta.id == id_sel %}aria-current="true"{% endif %}>
+      {{ m.avatar(e.empresa.id, e.empresa.nombre, none, 48, true) }}
+      <div class="fila-empleo-texto">
+        <strong>{{ e.oferta.titulo }}</strong>
+        <div>{{ e.empresa.nombre }}</div>
+        <div class="sub">{{ e.oferta.ciudad }} · {{ e.oferta.modalidad }}</div>
+        {% if e.contactos %}<div class="sub destacado">{{ e.contactos|length }} {{ 'contacto trabaja' if e.contactos|length == 1 else 'contactos trabajan' }} aquí</div>{% endif %}
+        {% if e.postulacion %}<div class="sub">Postulación: {{ e.postulacion|estado_texto }}</div>{% endif %}
+      </div>
+      <span class="afinidad" title="Afinidad con tus habilidades">{{ e.afinidad }}%</span>
+    </a>
+    {% else %}
+    {{ m.vacio('No hay ofertas abiertas', 'Vuelve más tarde para ver nuevas vacantes.') }}
+    {% endfor %}
+  </section>
+
+  <section class="detalle-empleo" aria-label="Detalle de la oferta">
+    {% if detalle %}
+    {% set o = detalle.oferta %}
+    <article class="tarjeta seccion">
+      <div class="detalle-cab">
+        {{ m.avatar(detalle.empresa.id, detalle.empresa.nombre, none, 64, true) }}
+        <div>
+          <h1>{{ o.titulo }}</h1>
+          <p><a href="/empresa/{{ detalle.empresa.id }}">{{ detalle.empresa.nombre }}</a> · {{ o.ciudad }} · {{ o.modalidad }}</p>
+          <p class="sub">Publicada {{ o.fecha_publicacion|hace }} · Cierra el {{ o.fecha_cierre|fecha }} · {{ detalle.n_postulantes }} {{ 'postulante' if detalle.n_postulantes == 1 else 'postulantes' }}</p>
+        </div>
+      </div>
+      <p class="salario">{{ o.salario_min|cop }} – {{ o.salario_max|cop }} al mes</p>
+      <div class="acciones">
+        {% if detalle.postulacion %}
+          <span class="btn btn-estado">Postulación: {{ detalle.postulacion.estado|estado_texto }} · {{ detalle.postulacion.fecha|fecha }}</span>
+          {% if detalle.postulacion.estado in ('enviada', 'en_revision') %}{{ m.boton_post(yo, '/empleos/' ~ o.id ~ '/retirar', 'Retirar postulación') }}{% endif %}
+        {% elif o.estado != 'abierta' %}
+          <span class="btn btn-estado">Oferta cerrada</span>
+        {% else %}
+          {{ m.boton_post(yo, '/empleos/' ~ o.id ~ '/postular', 'Postularme', 'btn btn-solido') }}
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="tarjeta seccion">
+      <h2>Qué se pide y cómo vas</h2>
+      <ul class="requisitos">
+        {% for r in detalle.requisitos %}
+        {% set cumple = r.tu_nivel is not none and r.tu_nivel >= r.nivel_minimo %}
+        <li class="{{ 'cumple' if cumple else 'falta' }}">
+          {{ m.icono('check' if cumple else 'x', 18) }}
+          <div><strong>{{ r.habilidad }}</strong> · nivel mínimo {{ r.nivel_minimo }}{{ ' · obligatoria' if r.obligatoria }}
+            <div class="sub">{{ ('Tu nivel: ' ~ r.tu_nivel) if r.tu_nivel is not none else 'No tienes esta habilidad en tu perfil' }}</div></div>
+        </li>
+        {% endfor %}
+      </ul>
+    </article>
+
+    <article class="tarjeta seccion">
+      <h2>Descripción</h2>
+      <p>{{ o.descripcion }}</p>
+    </article>
+
+    {% if detalle.contactos %}
+    <article class="tarjeta seccion">
+      <h2>Tus contactos en {{ detalle.empresa.nombre }}</h2>
+      {% for c in detalle.contactos %}<div class="pad-item">{{ m.persona(c, none, 48) }}</div>{% endfor %}
+    </article>
+    {% endif %}
+    {% else %}
+    <article class="tarjeta seccion">{{ m.vacio('Selecciona una oferta', 'Elige una vacante de la lista para ver sus detalles.') }}</article>
+    {% endif %}
+
+    {% if postulaciones %}
+    <article class="tarjeta seccion">
+      <h2>Mis postulaciones</h2>
+      {% for p in postulaciones %}
+      <a class="fila-simple" href="/empleos?oferta={{ p.oferta.id }}">
+        <span><strong>{{ p.oferta.titulo }}</strong><span class="sub"> · {{ p.empresa }}</span></span>
+        <span class="chip estado-{{ p.estado }}">{{ p.estado|estado_texto }}</span>
+      </a>
+      {% endfor %}
+    </article>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
