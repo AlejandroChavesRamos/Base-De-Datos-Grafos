@@ -3,31 +3,44 @@
 {% block titulo %}Buscar{% endblock %}
 {% block contenido %}
 <div class="grid-centrado">
-  {% if r is none %}
+  {% if resultados is none %}
   <section class="tarjeta">{{ m.vacio('Busca en LinkedUn', 'Escribe el nombre de una persona, una empresa, un cargo o un sector.') }}</section>
-  {% else %}
-  <section class="tarjeta">
-    <header class="tarjeta-cab"><h2>Personas</h2></header>
-    {% for x in r.personas %}<div class="pad-item">{{ m.persona(x.usuario, x.usuario.ciudad, 48) }}</div>
-    {% else %}{{ m.vacio('Sin personas', 'No hay personas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+  {% elif not (resultados.personas or resultados.empresas or resultados.ofertas) %}
+  <section class="tarjeta seccion">
+    {{ m.vacio('Sin resultados para “' ~ q ~ '”', 'Prueba con otra palabra, o explora lo que hay en la red.') }}
+    <div class="acciones">
+      <a class="btn btn-borde btn-chico" href="/empleos">Ver empleos</a>
+      <a class="btn btn-borde btn-chico" href="/red">Ver personas</a>
+    </div>
   </section>
+  {% else %}
+  {% if resultados.personas %}
   <section class="tarjeta">
-    <header class="tarjeta-cab"><h2>Empresas</h2></header>
-    {% for x in r.empresas %}
+    <header class="tarjeta-cab"><h2>Personas {{ m.cantidad(resultados.personas) }}</h2></header>
+    {% for x in resultados.personas %}<div class="pad-item">{{ m.persona(x.usuario, x.usuario.ciudad, 48) }}</div>{% endfor %}
+  </section>
+  {% endif %}
+  {% if resultados.empresas %}
+  <section class="tarjeta">
+    <header class="tarjeta-cab"><h2>Empresas {{ m.cantidad(resultados.empresas) }}</h2></header>
+    {% for x in resultados.empresas %}
     <a class="fila-empleo" href="/empresa/{{ x.empresa.id }}">
       {{ m.avatar(x.empresa.id, x.empresa.nombre, none, 48, true) }}
       <div class="fila-empleo-texto"><strong>{{ x.empresa.nombre }}</strong><div class="sub">{{ x.empresa.sector }} · {{ x.empresa.ciudad }}</div></div>
     </a>
-    {% else %}{{ m.vacio('Sin empresas', 'No hay empresas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+    {% endfor %}
   </section>
+  {% endif %}
+  {% if resultados.ofertas %}
   <section class="tarjeta">
-    <header class="tarjeta-cab"><h2>Empleos</h2></header>
-    {% for x in r.ofertas %}
+    <header class="tarjeta-cab"><h2>Empleos {{ m.cantidad(resultados.ofertas) }}</h2></header>
+    {% for x in resultados.ofertas %}
     <a class="fila-empleo" href="/empleos?oferta={{ x.oferta.id }}">
-      <div class="fila-empleo-texto"><strong>{{ x.oferta.titulo }}</strong><div class="sub">{{ x.empresa }} · {{ x.oferta.ciudad }}{{ ' · Cerrada' if x.oferta.estado != 'abierta' }}</div></div>
+      <div class="fila-empleo-texto"><strong>{{ x.oferta.titulo }}</strong><div class="sub">{{ x.empresa }} · {{ x.oferta.ciudad }}{{ ' · Cerrada' if x.oferta.estado != 'abierta' or x.vencida }}</div></div>
     </a>
-    {% else %}{{ m.vacio('Sin empleos', 'No hay ofertas que coincidan con “' ~ q ~ '”.') }}{% endfor %}
+    {% endfor %}
   </section>
+  {% endif %}
   {% endif %}
 </div>
 {% endblock %}

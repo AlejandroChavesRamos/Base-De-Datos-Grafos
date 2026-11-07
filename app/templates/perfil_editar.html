@@ -7,10 +7,17 @@
 {% set ep = err.get('perfil', {}) %}{% set vp = val.get('perfil') or u %}
 {% set eh = err.get('habilidad', {}) %}{% set vh = val.get('habilidad') or {} %}
 {% set ee = err.get('experiencia', {}) %}{% set ve = val.get('experiencia') or {} %}
-<div class="grid-centrado grid-medio">
+<div class="grid-editar">
+  <nav class="tarjeta indice-perfil" aria-label="Secciones del perfil">
+    <a href="#datos">Datos</a>
+    <a href="#habilidades">Habilidades</a>
+    <a href="#experiencia">Experiencia</a>
+    <a class="indice-volver" href="/perfil/{{ u.id }}">Ver mi perfil</a>
+  </nav>
 
-  <section class="tarjeta seccion">
-    <div class="encabezado-pagina"><h1>Editar perfil</h1><a href="/perfil/{{ u.id }}">Ver mi perfil</a></div>
+  <div class="panel">
+  <section class="tarjeta seccion" id="datos">
+    <div class="encabezado-pagina"><h1>Editar perfil</h1></div>
     <form method="post" action="/perfil/editar" novalidate>
       {{ m.csrf(yo) }}
       <div class="campos-2">
@@ -94,5 +101,6 @@
       <button class="btn btn-solido" type="submit">Agregar experiencia</button>
     </form>
   </section>
+  </div>
 </div>
 {% endblock %}

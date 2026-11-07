@@ -2,10 +2,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app import dependencias
 from app.database import db
 from app.repositories import sesiones
 from app.routers import acciones, admin, auth, gestion, paginas
@@ -52,6 +54,16 @@ def salud():
     return db.leer("RETURN 1 AS ok")
 
 
+def _quien_es(request: Request) -> dict | None:
+    """Para mostrar la barra de quien tiene sesion. Una pagina de error no debe fallar:
+    si no se puede saber (p. ej. Neo4j caido), se muestra la version publica."""
+    try:
+        cuenta = dependencias.cuenta_opcional(request)
+        return dependencias.visor(cuenta) if cuenta else None
+    except Exception:
+        return None
+
+
 @app.exception_handler(StarletteHTTPException)
 async def error_http(request: Request, exc: StarletteHTTPException):
     # Las dependencias usan HTTPException(303, Location=...) para redirigir
@@ -60,7 +72,8 @@ async def error_http(request: Request, exc: StarletteHTTPException):
     if "text/html" in request.headers.get("accept", ""):
         return templates.TemplateResponse(
             request, "error.html",
-            {"yo": None, "codigo": exc.status_code, "detalle": exc.detail},
+            {"yo": await run_in_threadpool(_quien_es, request), "ruta_actual": request.url.path,
+             "codigo": exc.status_code, "detalle": exc.detail},
             status_code=exc.status_code,
         )
     return JSONResponse({"detalle": exc.detail}, status_code=exc.status_code)

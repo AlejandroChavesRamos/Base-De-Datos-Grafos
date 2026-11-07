@@ -63,6 +63,9 @@ def crear_persona(d: dict):
                            ciudad: $ciudad, resumen: '', experiencia_anios: 0, buscando_empleo: true})
         CREATE (c)-[:TIENE_PERFIL]->(u)
         CREATE (c)-[:TIENE_ROL]->(r)
+        CREATE (:Notificacion {id: randomUUID(), tipo: 'bienvenida', leida: false, fecha: datetime(),
+                               mensaje: 'Bienvenido a LinkedUn. Completa tu perfil para recibir empleos a tu medida.',
+                               enlace: '/perfil/editar'})-[:PARA]->(u)
         RETURN c.id AS cuenta_id
         """,
         **d,
@@ -154,17 +157,28 @@ def eliminar_persona(cuenta_id: str, perfil_id: str):
 
 
 def eliminar_empresa(cuenta_id: str, perfil_id: str):
-    """Borra cuenta, empresa y sus ofertas (con sus postulaciones y requisitos)."""
+    """Borra la cuenta y las ofertas de la empresa, con sus postulaciones, requisitos y
+    avisos. Si alguien trabajo alli, el historial de esa persona es suyo: la empresa queda
+    como :EmpresaArchivada (invisible para el resto del sitio) y sus empleos, cerrados."""
     db.escribir(
         """
         MATCH (c:Cuenta {id: $cid})-[:TIENE_PERFIL]->(e:Empresa {id: $pid})
         OPTIONAL MATCH (e)-[:PUBLICA]->(o:Oferta)
-        WITH c, e, collect(o) AS os
+        WITH c, e, collect(o) AS os, collect('/empleos?oferta=' + o.id) AS enlaces
+        OPTIONAL MATCH (n:Notificacion) WHERE n.enlace IN enlaces
+        WITH c, e, os, collect(n) AS ns
         OPTIONAL MATCH (s:Sesion)-[:DE]->(c)
-        WITH c, e, os, collect(s) AS ss
-        FOREACH (x IN os | DETACH DELETE x)
-        FOREACH (x IN ss | DETACH DELETE x)
-        DETACH DELETE e, c
+        WITH c, e, os, ns, collect(s) AS ss
+        OPTIONAL MATCH (:Proyecto)-[p:PERTENECE_A]->(e)
+        WITH c, e, os, ns, ss, collect(p) AS proyectos
+        OPTIONAL MATCH (:Usuario)-[t:TRABAJA_EN]->(e)
+        WITH c, e, os, ns, ss, proyectos, collect(t) AS empleos
+        FOREACH (x IN os + ns + ss | DETACH DELETE x)
+        FOREACH (x IN proyectos | DELETE x)
+        FOREACH (x IN empleos | SET x.actual = false, x.hasta = coalesce(x.hasta, date()), x.rol = 'trabajador')
+        FOREACH (_ IN CASE WHEN size(empleos) > 0 THEN [1] ELSE [] END | REMOVE e:Empresa SET e:EmpresaArchivada)
+        FOREACH (_ IN CASE WHEN size(empleos) = 0 THEN [1] ELSE [] END | DETACH DELETE e)
+        DETACH DELETE c
         """,
         cid=cuenta_id, pid=perfil_id,
     )

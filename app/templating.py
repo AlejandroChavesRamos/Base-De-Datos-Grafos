@@ -142,7 +142,10 @@ AVISOS = {
     "error": {
         "no_se_pudo": "No se pudo completar la acción. Puede que ya se hubiera realizado.",
         "no_postulable": "No puedes postularte: la oferta ya cerró, venció o ya te postulaste.",
-        "no_publicable": "No se pudo publicar. Agrega al menos un requisito.",
+        "no_publicable": "No se pudo publicar. Revisa que tenga al menos un requisito y una fecha de cierre vigente.",
+        "oferta_vencida": "Esta oferta ya venció. Edita la fecha de cierre para reabrirla.",
+        "requisito_necesario": "Una oferta publicada debe conservar al menos un requisito.",
+        "experiencia_repetida": "Ya tienes registrada esa empresa con la misma fecha de inicio.",
         "dato_invalido": "Revisa los datos del formulario.",
     },
 }

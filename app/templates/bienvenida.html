@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LinkedUn | Todo empieza con UN contacto</title>
+  <meta name="description" content="Conecta con profesionales y empresas, descubre empleos a tu medida y encuentra quién puede abrirte la puerta.">
+  <meta name="theme-color" content="#05070d">
+  <link rel="icon" href="{{ url_for('static', path='marca/favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', path='marca/favicon-32.png') }}" sizes="32x32" type="image/png">
+  <link rel="stylesheet" href="{{ url_for('static', path='animaciones/bienvenida.css') }}">
+  <script src="{{ url_for('static', path='animaciones/precarga.js') }}"></script>
+  <script type="module" src="{{ url_for('static', path='animaciones/bienvenida.js') }}"></script>
+</head>
+<body>
+  <canvas id="escena" aria-hidden="true"></canvas>
+  <button id="saltar" type="button" hidden>Saltar</button>
+
+  <div class="portada">
+    <header class="portada-cabecera">
+      <a class="portada-marca" href="/" aria-label="LinkedUn, ir a la portada">
+        <img src="{{ url_for('static', path='marca/logo-un.svg') }}" alt="" width="44" height="44">
+        <span>LinkedUn</span>
+      </a>
+    </header>
+
+    <main class="portada-centro">
+      <h1 class="lema">
+        <span class="palabra">Todo</span>
+        <span class="palabra">empieza</span>
+        <span class="palabra">con</span>
+        <span class="palabra palabra-un">UN</span>
+        <span class="palabra">contacto.</span>
+      </h1>
+      <p class="subtitulo">Conecta con profesionales y empresas, descubre empleos a tu medida y encuentra quién puede abrirte la puerta.</p>
+      <nav class="acciones" aria-label="Acceso">
+        <a class="boton boton-principal" href="/registro">Crear mi cuenta</a>
+        <a class="boton boton-vidrio" href="/login">Iniciar sesión</a>
+      </nav>
+    </main>
+
+    <footer class="credito">Imagen de la Tierra: NASA Earth Observatory</footer>
+  </div>
+</body>
+</html>

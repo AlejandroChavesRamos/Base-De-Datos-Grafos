@@ -7,7 +7,9 @@ def obtener(eid: str, uid: str):
         """
         MATCH (e:Empresa {id: $eid})
         RETURN e{.*} AS empresa,
-               COUNT { (:Usuario)-[:TRABAJA_EN {actual: true}]->(e) } AS empleados
+               NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) } AS activa,
+               COUNT { (x:Usuario)-[:TRABAJA_EN {actual: true}]->(e)
+                       WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS empleados
         """,
         eid=eid,
     )
@@ -16,6 +18,7 @@ def obtener(eid: str, uid: str):
     ofertas = db.leer(
         """
         MATCH (:Empresa {id: $eid})-[:PUBLICA]->(o:Oferta {estado: 'abierta'})
+        WHERE o.fecha_cierre >= date({timezone: 'America/Bogota'})
         RETURN o{.id, .titulo, .modalidad, .ciudad, .fecha_publicacion} AS oferta
         ORDER BY o.fecha_publicacion DESC
         """,
@@ -25,6 +28,7 @@ def obtener(eid: str, uid: str):
         """
         MATCH (:Usuario {id: $uid})-[:CONECTA_CON]-(c:Usuario)
               -[t:TRABAJA_EN {actual: true}]->(:Empresa {id: $eid})
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(c) }
         RETURN c{.id, .nombre, .apellido} AS usuario, t.cargo AS cargo
         """,
         uid=uid, eid=eid,
@@ -34,12 +38,13 @@ def obtener(eid: str, uid: str):
         MATCH (u:Usuario {id: $uid}), (e:Empresa {id: $eid})
         MATCH p = shortestPath((u)-[:CONECTA_CON|TRABAJA_EN*..8]-(e))
         WHERE all(r IN relationships(p) WHERE type(r) = 'CONECTA_CON' OR r.actual = true)
+          AND all(n IN nodes(p) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(n) })
         RETURN [n IN nodes(p) | n.nombre] AS ruta, length(p) AS saltos
         """,
         uid=uid, eid=eid,
     )
     b = base[0]
-    return {"empresa": b["empresa"], "empleados": b["empleados"], "ofertas": ofertas,
+    return {"empresa": b["empresa"], "activa": b["activa"], "empleados": b["empleados"], "ofertas": ofertas,
             "contactos": contactos, "camino": camino[0] if camino else None}
 
 
@@ -63,6 +68,7 @@ def empleados(eid: str):
     return db.leer(
         """
         MATCH (u:Usuario)-[t:TRABAJA_EN {actual: true}]->(:Empresa {id: $eid})
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(u) }
         RETURN u{.id, .nombre, .apellido, .titular} AS usuario, t.rol AS rol, t.cargo AS cargo
         ORDER BY u.nombre, u.apellido
         """,

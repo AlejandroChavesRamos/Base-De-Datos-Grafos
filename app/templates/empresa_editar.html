@@ -2,20 +2,40 @@
 {% import "macros.html" as m %}
 {% block titulo %}Editar empresa{% endblock %}
 {% block contenido %}
-<section class="tarjeta formulario formulario-ancho">
-  <h1>Datos de la empresa</h1>
-  <p class="sub"><a href="/empresa/{{ e.id }}/gestion">Volver a la gestión</a></p>
-  <form method="post" action="/empresa/{{ e.id }}/editar" novalidate>
-    {{ m.csrf(yo) }}
-    {{ m.campo('nombre', 'Nombre de la empresa', val, err, maximo=100) }}
-    <div class="campos-2">
-      {{ m.seleccion('sector', 'Sector', sectores, val.get('sector'), err) }}
-      {{ m.seleccion('tamano', 'Tamaño', tamanos, val.get('tamano'), err) }}
-    </div>
-    {{ m.campo('ciudad', 'Ciudad', val, err, maximo=60) }}
-    {{ m.campo('sitio_web', 'Sitio web', val, err, tipo='url', requerido=false, ayuda='Debe empezar por https://', maximo=200) }}
-    {{ m.area('descripcion', 'Descripción', val, err, filas=3, maximo=400) }}
-    <button class="btn btn-solido" type="submit">Guardar cambios</button>
-  </form>
-</section>
+<div class="grid-oferta grid-oferta-lateral">
+  <section class="tarjeta formulario formulario-ancho">
+    <h1>Datos de la empresa</h1>
+    <p class="sub"><a href="/empresa/{{ e.id }}/gestion">Volver a la gestión</a></p>
+    <form method="post" action="/empresa/{{ e.id }}/editar" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="bloque-form">
+        <h2 class="bloque-titulo">Identidad</h2>
+        {{ m.campo('nombre', 'Nombre de la empresa', val, err, maximo=100) }}
+        <div class="campos-2">
+          {{ m.seleccion('sector', 'Sector', sectores, val.get('sector'), err) }}
+          {{ m.seleccion('tamano', 'Tamaño', tamanos, val.get('tamano'), err) }}
+        </div>
+        {{ m.area('descripcion', 'Descripción', val, err, filas=3, maximo=400) }}
+      </div>
+      <div class="bloque-form">
+        <h2 class="bloque-titulo">Ubicación y contacto</h2>
+        {{ m.campo('ciudad', 'Ciudad', val, err, maximo=60) }}
+        {{ m.campo('sitio_web', 'Sitio web', val, err, tipo='url', requerido=false, ayuda='Debe empezar por https://', maximo=200) }}
+      </div>
+      <button class="btn btn-solido" type="submit">Guardar cambios</button>
+    </form>
+  </section>
+  <aside class="tarjeta seccion lateral-datos">
+    <h2>Datos actuales</h2>
+    <p class="sub">Así aparece hoy tu empresa. Cambia al guardar.</p>
+    <dl class="datos-cuenta">
+      <dt>Nombre</dt><dd>{{ e.nombre }}</dd>
+      <dt>Sector</dt><dd>{{ e.sector }}</dd>
+      <dt>Tamaño</dt><dd>{% for clave, texto in tamanos if clave == e.tamano %}{{ texto }}{% else %}{{ e.tamano }}{% endfor %}</dd>
+      <dt>Ciudad</dt><dd>{{ e.ciudad }}</dd>
+      {% if e.sitio_web %}<dt>Sitio web</dt><dd>{{ e.sitio_web }}</dd>{% endif %}
+    </dl>
+    <a class="btn btn-borde" href="/empresa/{{ e.id }}">Ver página pública</a>
+  </aside>
+</div>
 {% endblock %}

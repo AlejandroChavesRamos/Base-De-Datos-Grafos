@@ -93,6 +93,7 @@ def nueva(request: Request, empresa_id: str, f=Depends(formulario),
 def gestion_oferta(request: Request, oferta_id: str, yo: dict = Depends(gestor_oferta)):
     datos = ofertas.obtener_gestion(oferta_id)
     return render(request, "oferta_gestion.html", yo, o=datos["oferta"], e=datos["empresa"],
+                  vencida=datos.get("vencida"),
                   requisitos=datos["requisitos"], catalogo=perfiles.catalogo_habilidades(),
                   postulantes=ofertas.postulantes(oferta_id),
                   estados=validadores.ESTADOS_POSTULACION, err={})
@@ -132,7 +133,7 @@ def agregar_requisito(request: Request, oferta_id: str, f=Depends(formulario),
 def quitar_requisito(oferta_id: str, hid: str, yo: dict = Depends(gestor_oferta_post)):
     ok = ofertas.quitar_requisito(oferta_id, hid)
     return volver(f"/ofertas/{oferta_id}/gestion", aviso="requisito_quitado" if ok else None,
-                  error=None if ok else "no_se_pudo", ancla="requisitos")
+                  error=None if ok else "requisito_necesario", ancla="requisitos")
 
 
 @router.post("/ofertas/{oferta_id}/publicar")
@@ -152,9 +153,9 @@ def cerrar(oferta_id: str, yo: dict = Depends(gestor_oferta_post)):
 
 @router.post("/ofertas/{oferta_id}/reabrir")
 def reabrir(oferta_id: str, yo: dict = Depends(gestor_oferta_post)):
-    ok = ofertas.cambiar_estado(oferta_id, ["cerrada"], "abierta")
+    ok = ofertas.reabrir(oferta_id)
     return volver(f"/ofertas/{oferta_id}/gestion", aviso="oferta_reabierta" if ok else None,
-                  error=None if ok else "no_se_pudo")
+                  error=None if ok else "oferta_vencida")
 
 
 @router.post("/ofertas/{oferta_id}/postulaciones/{uid}/estado")

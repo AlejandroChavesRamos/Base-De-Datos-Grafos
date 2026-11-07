@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% import "macros.html" as m %}
 {% block titulo %}Error {{ codigo }}{% endblock %}
+{# Siempre oscura, con o sin sesion; la barra superior si cambia segun quien este conectado. #}
+{% block clase_cuerpo %}panel-interno{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', path='css/panel-interno.css') }}">{% endblock %}
 {% block contenido %}
 <section class="tarjeta pagina-error">
   <h1>{{ 'No encontramos lo que buscas' if codigo == 404 else 'Algo salió mal' }}</h1>

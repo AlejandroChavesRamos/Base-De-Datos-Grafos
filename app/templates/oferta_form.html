@@ -2,23 +2,41 @@
 {% import "macros.html" as m %}
 {% block titulo %}{{ 'Nueva oferta' if nueva else 'Editar oferta' }}{% endblock %}
 {% block contenido %}
-<section class="tarjeta formulario formulario-ancho">
-  <h1>{{ 'Nueva oferta' if nueva else 'Editar oferta' }}</h1>
-  <p class="sub">{% if nueva %}Se guarda como <strong>borrador</strong>. Después agregas los requisitos y la publicas.{% else %}<a href="/ofertas/{{ oferta_id }}/gestion">Volver a la oferta</a>{% endif %}</p>
-  <form method="post" action="{{ '/empresa/' ~ empresa_id ~ '/ofertas/nueva' if nueva else '/ofertas/' ~ oferta_id ~ '/editar' }}" novalidate>
-    {{ m.csrf(yo) }}
-    {{ m.campo('titulo', 'Título del cargo', val, err, maximo=120) }}
-    {{ m.area('descripcion', 'Descripción', val, err, filas=6, maximo=2000, requerido=true) }}
-    <div class="campos-2">
-      {{ m.seleccion('modalidad', 'Modalidad', modalidades, val.get('modalidad'), err) }}
-      {{ m.campo('ciudad', 'Ciudad', val, err, maximo=60) }}
-    </div>
-    <div class="campos-2">
-      {{ m.campo('salario_min', 'Salario mínimo mensual (COP)', val, err, tipo='number') }}
-      {{ m.campo('salario_max', 'Salario máximo mensual (COP)', val, err, tipo='number') }}
-    </div>
-    {{ m.campo('fecha_cierre', 'Fecha de cierre', val, err, tipo='date') }}
-    <button class="btn btn-solido btn-ancho" type="submit">{{ 'Guardar borrador' if nueva else 'Guardar cambios' }}</button>
-  </form>
-</section>
+<div class="grid-oferta{{ ' grid-oferta-lateral' if nueva }}">
+  <section class="tarjeta formulario formulario-ancho">
+    <h1>{{ 'Nueva oferta' if nueva else 'Editar oferta' }}</h1>
+    <p class="sub">{% if nueva %}Se guarda como <strong>borrador</strong>. Después agregas los requisitos y la publicas.{% else %}<a href="/ofertas/{{ oferta_id }}/gestion">Volver a la oferta</a>{% endif %}</p>
+    <form method="post" action="{{ '/empresa/' ~ empresa_id ~ '/ofertas/nueva' if nueva else '/ofertas/' ~ oferta_id ~ '/editar' }}" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="bloque-form">
+        <h2 class="bloque-titulo">Lo básico</h2>
+        {{ m.campo('titulo', 'Título del cargo', val, err, maximo=120) }}
+        {{ m.area('descripcion', 'Descripción', val, err, filas=6, maximo=2000, requerido=true) }}
+      </div>
+      <div class="bloque-form">
+        <h2 class="bloque-titulo">Condiciones</h2>
+        <div class="campos-2">
+          {{ m.seleccion('modalidad', 'Modalidad', modalidades, val.get('modalidad'), err) }}
+          {{ m.campo('ciudad', 'Ciudad', val, err, maximo=60) }}
+        </div>
+        <div class="campos-2">
+          {{ m.campo('salario_min', 'Salario mínimo mensual (COP)', val, err, tipo='number') }}
+          {{ m.campo('salario_max', 'Salario máximo mensual (COP)', val, err, tipo='number') }}
+        </div>
+      </div>
+      <div class="bloque-form">
+        <h2 class="bloque-titulo">Cierre</h2>
+        {{ m.campo('fecha_cierre', 'Fecha de cierre', val, err, tipo='date') }}
+      </div>
+      <button class="btn btn-solido btn-ancho" type="submit">{{ 'Guardar borrador' if nueva else 'Guardar cambios' }}</button>
+    </form>
+  </section>
+  {% if nueva %}
+  <aside class="tarjeta seccion lateral-datos">
+    <h2>Cómo se publica</h2>
+    <p class="sub">Nadie ve la oferta hasta que la publiques.</p>
+    {{ m.pasos_oferta(1) }}
+  </aside>
+  {% endif %}
+</div>
 {% endblock %}

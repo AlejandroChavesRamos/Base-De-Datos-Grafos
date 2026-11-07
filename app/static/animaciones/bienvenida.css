@@ -1,0 +1,232 @@
+@font-face {
+  font-family: "Sora";
+  src: url("../fuentes/sora-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+@view-transition { navigation: auto; }
+
+:root {
+  --negro: #05070d;
+  --noche: #0a1a33;
+  --profundo: #0f2c5c;
+  --electrico: #4da3ff;
+  --blanco: #f5f8ff;
+  --suave: rgba(245, 248, 255, .72);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; background: var(--negro); color: var(--blanco); }
+
+body {
+  font-family: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#escena {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.estatico #escena { display: none; }
+
+/* Imagen fija: respaldo sin WebGL, con movimiento reducido o si la escena falla. */
+html:not(.js-animado) body,
+.estatico body {
+  background: var(--negro) url("texturas/planeta-fijo.webp") center bottom / cover no-repeat fixed;
+}
+
+.captura body { background: var(--negro); }
+
+.captura .portada, .captura #saltar { display: none; }
+
+#saltar {
+  position: fixed;
+  z-index: 5;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 32px);
+  padding: 8px 18px;
+  border: 1px solid rgba(245, 248, 255, .28);
+  border-radius: 999px;
+  background: rgba(10, 26, 51, .55);
+  color: var(--blanco);
+  font: 500 13px/1 "Sora", system-ui, sans-serif;
+  letter-spacing: .04em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background .2s ease, border-color .2s ease;
+}
+
+#saltar:hover { background: rgba(15, 44, 92, .85); border-color: var(--electrico); }
+
+.portada {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 3vw, 32px);
+}
+
+.portada-cabecera { flex: none; }
+
+.portada-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blanco);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: .02em;
+  text-decoration: none;
+}
+
+.portada-marca img { display: block; width: 44px; height: 44px; }
+
+/* El bloque de texto queda en la zona alta: el planeta ocupa la parte baja, como en la referencia. */
+.portada-centro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: clamp(8px, 4.5vh, 72px);
+}
+
+.lema {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(2.5rem, min(6.6vw, 10.5vh), 5.75rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.palabra { display: inline-block; }
+
+.palabra-un {
+  color: var(--electrico);
+  font-weight: 700;
+  text-shadow: 0 0 34px rgba(77, 163, 255, .55);
+}
+
+.subtitulo {
+  margin: clamp(14px, 2.4vh, 24px) 0 0;
+  max-width: 58ch;
+  color: var(--suave);
+  font-size: clamp(.95rem, 1.35vw, 1.15rem);
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: clamp(18px, 3.4vh, 34px);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 28px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform .2s ease, box-shadow .25s ease, background .2s ease, border-color .2s ease;
+}
+
+.boton:hover { transform: translateY(-2px); }
+
+.boton-principal {
+  background: var(--blanco);
+  color: var(--negro);
+  box-shadow: 0 0 0 rgba(77, 163, 255, 0);
+}
+
+.boton-principal:hover { box-shadow: 0 8px 34px rgba(77, 163, 255, .5); }
+
+.boton-vidrio {
+  border: 1px solid rgba(245, 248, 255, .34);
+  background: rgba(10, 26, 51, .42);
+  color: var(--blanco);
+  backdrop-filter: blur(10px);
+}
+
+.boton-vidrio:hover { border-color: var(--electrico); background: rgba(15, 44, 92, .62); }
+
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--electrico);
+  outline-offset: 3px;
+}
+
+.credito {
+  flex: none;
+  color: rgba(245, 248, 255, .5);
+  font-size: 11px;
+  text-align: left;
+}
+
+/* --- Revelado. Sin clases (sin JS, sin WebGL o con movimiento reducido) todo se ve de inmediato. --- */
+.js-animado .portada { opacity: 0; visibility: hidden; }
+
+.js-animado.listo .portada { opacity: 1; visibility: visible; }
+
+.js-animado.listo .portada-cabecera,
+.js-animado.listo .credito { animation: subir .9s ease both .7s; }
+
+.js-animado.listo .palabra { animation: palabra .85s cubic-bezier(.2, .7, .15, 1) both; }
+.js-animado.listo .palabra:nth-child(1) { animation-delay: 0s; }
+.js-animado.listo .palabra:nth-child(2) { animation-delay: .09s; }
+.js-animado.listo .palabra:nth-child(3) { animation-delay: .18s; }
+.js-animado.listo .palabra:nth-child(4) { animation-delay: .27s; }
+.js-animado.listo .palabra:nth-child(5) { animation-delay: .36s; }
+
+.js-animado.listo .subtitulo { animation: subir .8s ease both .55s; }
+.js-animado.listo .acciones { animation: subir .8s ease both .72s; }
+
+@keyframes palabra {
+  from { opacity: 0; transform: translateY(.45em); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Pantallas bajas: celular en horizontal --- */
+@media (max-height: 480px) {
+  .portada { padding: 10px 16px; }
+  .portada-marca img { width: 30px; height: 30px; }
+  .portada-marca { font-size: 13px; }
+  .portada-centro { padding-top: 0; }
+  .lema { max-width: none; font-size: clamp(1.5rem, 5vw, 2.25rem); }
+  .subtitulo { margin-top: 6px; max-width: 72ch; font-size: .78rem; line-height: 1.35; }
+  .acciones { margin-top: 10px; }
+  .boton { min-height: 38px; padding: 0 20px; font-size: 13px; }
+  .credito { font-size: 9px; }
+}
+
+@media (max-width: 480px) {
+  .acciones { width: 100%; flex-direction: column; align-items: stretch; max-width: 320px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton { transition: none; }
+  .boton:hover { transform: none; }
+  @view-transition { navigation: none; }
+}

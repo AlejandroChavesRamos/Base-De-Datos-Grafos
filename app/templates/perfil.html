@@ -15,7 +15,7 @@
         <p class="titular">{{ u.titular }}</p>
         <p class="sub">
           {{ m.icono('ubicacion', 14) }} {{ u.ciudad }}
-          · <a href="/red">{{ p.conexiones }} {{ 'contacto' if p.conexiones == 1 else 'contactos' }}</a>
+          · {% if yo.tipo == 'persona' %}<a href="/red">{{ p.conexiones }} {{ 'contacto' if p.conexiones == 1 else 'contactos' }}</a>{% else %}{{ p.conexiones }} {{ 'contacto' if p.conexiones == 1 else 'contactos' }}{% endif %}
         </p>
         {% if p.empresa %}
         <a class="empresa-chip" href="/empresa/{{ p.empresa.id }}">
@@ -48,6 +48,7 @@
       <p class="sub">{{ u.experiencia_anios }} {{ 'año' if u.experiencia_anios == 1 else 'años' }} de experiencia</p></section>
     {% endif %}
 
+    {% if p.experiencia or es_propio %}
     <section class="tarjeta seccion">
       <h2>Experiencia</h2>
       {% for x in p.experiencia %}
@@ -55,16 +56,19 @@
         {{ m.avatar(x.empresa.id, x.empresa.nombre, none, 48, true) }}
         <div>
           <strong>{{ x.cargo }}</strong>
-          <div><a href="/empresa/{{ x.empresa.id }}">{{ x.empresa.nombre }}</a>
+          <div>{% if x.archivada %}{{ x.empresa.nombre }}{% else %}<a href="/empresa/{{ x.empresa.id }}">{{ x.empresa.nombre }}</a>{% endif %}
             {% if x.rol == 'rrhh' %}<span class="chip chip-azul">Talento humano</span>{% endif %}</div>
           <div class="sub">{{ x.desde|mes_anio }} – {{ 'actualidad' if x.actual else x.hasta|mes_anio }} · {{ x.desde|duracion(x.hasta) }}</div>
         </div>
       </div>
       {% else %}
-      {{ m.vacio('Sin experiencia registrada', 'Aquí aparecerán los cargos de esta persona.') }}
+      {{ m.vacio('Cuenta tu experiencia', 'Las empresas la ven al revisar tu postulación.') }}
+      <a class="btn btn-borde btn-chico" href="/perfil/editar#experiencia">Agregar experiencia</a>
       {% endfor %}
     </section>
+    {% endif %}
 
+    {% if p.habilidades or es_propio %}
     <section class="tarjeta seccion">
       <h2>Habilidades</h2>
       <ul class="lista-hab">
@@ -72,11 +76,14 @@
         <li><div><strong>{{ h.habilidad.nombre }}</strong><div class="sub">{{ h.habilidad.categoria|capitalize }} · {{ h.anios }} {{ 'año' if h.anios == 1 else 'años' }}</div></div>
           <div class="hab-nivel">{{ m.nivel(h.nivel) }}<small>{{ h.nivel|nivel_texto }}</small></div></li>
         {% else %}
-        <li>{{ m.vacio('Sin habilidades', 'Agrega habilidades para recibir mejores recomendaciones.') }}</li>
+        <li>{{ m.vacio('Agrega tus habilidades', 'Con ellas calculamos qué empleos encajan contigo.') }}</li>
+        <li><a class="btn btn-borde btn-chico" href="/perfil/editar#habilidades">Agregar habilidades</a></li>
         {% endfor %}
       </ul>
     </section>
+    {% endif %}
 
+    {% if p.proyectos or es_propio %}
     <section class="tarjeta seccion">
       <h2>Proyectos</h2>
       {% for x in p.proyectos %}
@@ -90,13 +97,15 @@
         </div>
       </div>
       {% else %}
-      {{ m.vacio('Sin proyectos', 'Los proyectos en los que participa aparecerán aquí.') }}
+      {{ m.vacio('Muestra tus proyectos', 'Únete a uno de la red o crea el tuyo.') }}
+      <a class="btn btn-borde btn-chico" href="/proyectos">Ver proyectos</a>
       {% endfor %}
     </section>
+    {% endif %}
   </div>
 
   <aside class="col-lateral">
-    {% if not es_propio and yo.tipo == 'persona' %}
+    {% if not es_propio and yo.tipo == 'persona' and (ruta or en_comun) %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Cómo estás conectado</h2></header>
       {% if ruta %}
@@ -104,8 +113,6 @@
         <ol class="camino">
           {% for n in ruta.ruta %}<li>{{ m.avatar(n.id, n.nombre, n.apellido, 32) }}<span>{{ n.nombre }} {{ n.apellido }}{{ ' (tú)' if loop.first }}</span></li>{% endfor %}
         </ol>
-      {% else %}
-        <p class="sub pad">No hay una ruta de contactos entre ustedes todavía.</p>
       {% endif %}
       {% if en_comun %}
       <div class="separador"></div>
@@ -115,14 +122,14 @@
     </section>
     {% endif %}
 
+    {% if similares %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Perfiles similares</h2></header>
       {% for s in similares %}
-      <div class="pad-item">{{ m.persona(s.usuario, s.habilidades_comunes|join(', '), 40) }}</div>
-      {% else %}
-      {{ m.vacio('Sin perfiles similares', 'Aparecen cuando comparten habilidades con otras personas.') }}
+      <div class="pad-item">{{ m.persona(s.usuario, s.habilidades_comunes|join(', ') or ('En ' ~ s.usuario.ciudad), 40) }}</div>
       {% endfor %}
     </section>
+    {% endif %}
   </aside>
 </div>
 {% endblock %}

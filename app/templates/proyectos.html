@@ -4,7 +4,7 @@
 {% block contenido %}
 {% set f = val.get('f') or {} %}{% set techs_sel = val.get('techs') or [] %}
 {% set estados = [('en_curso', 'En curso'), ('finalizado', 'Finalizado')] %}
-<div class="grid-centrado grid-medio">
+<div class="grid-proyectos">
   <section class="tarjeta">
     <header class="tarjeta-cab"><h2>Proyectos de la red</h2><small>{{ proyectos|length }}</small></header>
     {% for x in proyectos %}

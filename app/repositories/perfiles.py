@@ -27,7 +27,13 @@ def catalogo_habilidades():
 
 
 def lista_empresas():
-    return db.leer("MATCH (e:Empresa) RETURN e.id AS id, e.nombre AS nombre ORDER BY e.nombre")
+    return db.leer(
+        """
+        MATCH (e:Empresa)
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
+        RETURN e.id AS id, e.nombre AS nombre ORDER BY e.nombre
+        """
+    )
 
 
 # ------------------------------------------------------------ habilidades
@@ -60,10 +66,15 @@ def quitar_habilidad(uid: str, hid: str) -> bool:
 # ------------------------------------------------------------ experiencia
 def agregar_experiencia(uid: str, d: dict) -> bool:
     """Regla del modelo: solo UN empleo vigente. Si el nuevo es vigente, el anterior
-    se cierra (actual=false, hasta=desde del nuevo) en la MISMA transaccion."""
+    se cierra (actual=false, hasta=desde del nuevo) en la MISMA transaccion. No admite
+    repetir empresa y fecha de inicio. El SET va primero porque bloquea al usuario: dos
+    envios simultaneos se atienden en fila y el segundo ya ve lo que hizo el primero."""
     filas = db.escribir(
         """
         MATCH (u:Usuario {id: $uid}), (e:Empresa {id: $empresa_id})
+        SET u.actualizado = datetime()
+        WITH u, e
+        WHERE NOT EXISTS { (u)-[t:TRABAJA_EN]->(e) WHERE t.desde = date($desde) }
         OPTIONAL MATCH (u)-[prev:TRABAJA_EN {actual: true}]->()
         WITH u, e, collect(prev) AS previos
         FOREACH (p IN CASE WHEN $actual THEN previos ELSE [] END |
@@ -79,9 +90,10 @@ def agregar_experiencia(uid: str, d: dict) -> bool:
 
 
 def quitar_experiencia(uid: str, empresa_id: str, desde: str) -> bool:
+    """Sin etiqueta en el destino: tambien sirve para una empresa ya archivada."""
     filas = db.escribir(
         """
-        MATCH (:Usuario {id: $uid})-[t:TRABAJA_EN]->(:Empresa {id: $eid})
+        MATCH (:Usuario {id: $uid})-[t:TRABAJA_EN]->({id: $eid})
         WHERE t.desde = date($desde)
         DELETE t
         RETURN 1 AS ok

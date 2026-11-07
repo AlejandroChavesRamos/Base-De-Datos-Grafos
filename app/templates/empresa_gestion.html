@@ -2,7 +2,7 @@
 {% import "macros.html" as m %}
 {% block titulo %}Gestionar {{ e.nombre }}{% endblock %}
 {% block contenido %}
-<div class="grid-ancho">
+<div class="grid-ancho panel">
   <section class="tarjeta seccion">
     <div class="encabezado-pagina">
       <div class="persona">{{ m.avatar(e.id, e.nombre, none, 56, true) }}
@@ -15,20 +15,28 @@
     </div>
   </section>
 
+  <section class="indicadores" aria-label="Resumen de ofertas">
+    <div class="indicador indicador-activas" data-indicador="abiertas"><span class="indicador-valor">{{ ofertas|selectattr('oferta.estado', 'equalto', 'abierta')|rejectattr('vencida')|list|length }}</span><span class="indicador-nombre">Abiertas</span></div>
+    <div class="indicador indicador-bloqueadas" data-indicador="borradores"><span class="indicador-valor">{{ ofertas|selectattr('oferta.estado', 'equalto', 'borrador')|list|length }}</span><span class="indicador-nombre">Borradores</span></div>
+    <div class="indicador indicador-desactivadas" data-indicador="cerradas"><span class="indicador-valor">{{ ofertas|selectattr('oferta.estado', 'equalto', 'cerrada')|list|length + ofertas|selectattr('vencida')|list|length }}</span><span class="indicador-nombre">Cerradas</span></div>
+    <div class="indicador" data-indicador="postulantes"><span class="indicador-valor">{{ ofertas|sum(attribute='postulantes') }}</span><span class="indicador-nombre">Postulantes</span></div>
+  </section>
+
   <section class="tarjeta seccion">
-    <h2>Ofertas ({{ ofertas|length }})</h2>
-    <div class="tabla-scroll">
+    <h2 id="titulo-ofertas">Ofertas</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-ofertas">
       <table class="tabla">
-        <thead><tr><th scope="col">Oferta</th><th scope="col">Estado</th><th scope="col">Requisitos</th><th scope="col">Postulantes</th><th scope="col">Cierra</th></tr></thead>
+        <thead><tr><th scope="col">Oferta</th><th scope="col">Estado</th><th scope="col">Requisitos</th><th scope="col">Postulantes</th><th scope="col">Cierra</th><th scope="col" class="col-accion"><span class="solo-lectores">Acción</span></th></tr></thead>
         <tbody>
         {% for x in ofertas %}
           <tr>
             <td><a href="/ofertas/{{ x.oferta.id }}/gestion"><strong>{{ x.oferta.titulo }}</strong></a><div class="sub">{{ x.oferta.ciudad }} · {{ x.oferta.modalidad }}</div></td>
-            <td><span class="chip estado-{{ x.oferta.estado }}">{{ x.oferta.estado|capitalize }}</span></td>
+            <td>{% if x.vencida %}<span class="chip estado-vencida">Vencida</span>{% else %}<span class="chip estado-{{ x.oferta.estado }}">{{ x.oferta.estado|capitalize }}</span>{% endif %}</td>
             <td>{{ x.requisitos }}</td><td>{{ x.postulantes }}</td><td>{{ x.oferta.fecha_cierre|fecha }}</td>
+            <td class="col-accion"><a class="btn btn-borde btn-chico" href="/ofertas/{{ x.oferta.id }}/gestion">Gestionar</a></td>
           </tr>
         {% else %}
-          <tr><td colspan="5">{{ m.vacio('Aún no has creado ofertas', 'Crea una, agrégale requisitos y publícala para recibir postulaciones.') }}</td></tr>
+          <tr><td colspan="6">{{ m.vacio('Aún no has creado ofertas', 'Crea una, agrégale requisitos y publícala para recibir postulaciones.') }}</td></tr>
         {% endfor %}
         </tbody>
       </table>
@@ -38,9 +46,10 @@
   <section class="tarjeta seccion" id="equipo">
     <h2>Equipo ({{ empleados|length }})</h2>
     <p class="sub">Las personas con rol <strong>RR. HH.</strong> pueden crear y gestionar las ofertas de esta empresa.{% if not es_dueno %} Solo la cuenta de la empresa asigna este rol.{% endif %}</p>
+    <div class="rejilla-equipo">
     {% for x in empleados %}
     <div class="fila-accion pad-item">
-      {{ m.persona(x.usuario, x.cargo, 48) }}
+      {{ m.persona(x.usuario, x.cargo if x.cargo != x.usuario.titular else none, 48) }}
       <span class="chip {{ 'chip-azul' if x.rol == 'rrhh' }}">{{ 'RR. HH.' if x.rol == 'rrhh' else 'Trabajador' }}</span>
       {% if es_dueno and puede_asignar %}
         {{ m.boton_post(yo, '/empresa/' ~ e.id ~ '/empleados/' ~ x.usuario.id ~ '/rol',
@@ -51,6 +60,7 @@
     {% else %}
     {{ m.vacio('Nadie ha vinculado esta empresa como empleo actual', 'Las personas la agregan desde su experiencia laboral.') }}
     {% endfor %}
+    </div>
   </section>
 </div>
 {% endblock %}

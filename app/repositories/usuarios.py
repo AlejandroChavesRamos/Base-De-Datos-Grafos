@@ -8,13 +8,14 @@ def resumen(uid: str):
         """
         MATCH (u:Usuario {id: $id})
         OPTIONAL MATCH (u)-[t:TRABAJA_EN {actual: true}]->(e:Empresa)
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
         RETURN u{.*} AS u,
                e{.id, .nombre} AS empresa,
                t.cargo AS cargo, t.rol AS rol_empresa,
-               COUNT { (u)-[:CONECTA_CON]-(:Usuario) } AS conexiones,
+               COUNT { (u)-[:CONECTA_CON]-(x:Usuario) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS conexiones,
                COUNT { (u)-[:POSTULA_A]->(:Oferta) } AS postulaciones,
                COUNT { (:Notificacion {leida: false})-[:PARA]->(u) } AS sin_leer,
-               COUNT { (:Usuario)-[:SOLICITA_CONEXION]->(u) } AS solicitudes
+               COUNT { (x:Usuario)-[:SOLICITA_CONEXION]->(u) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS solicitudes
         """,
         id=uid,
     )
@@ -31,8 +32,10 @@ def perfil_completo(uid: str):
         """
         MATCH (u:Usuario {id: $id})
         OPTIONAL MATCH (u)-[t:TRABAJA_EN {actual: true}]->(e:Empresa)
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
         RETURN u{.*} AS usuario, e{.id, .nombre} AS empresa, t.cargo AS cargo,
-               COUNT { (u)-[:CONECTA_CON]-(:Usuario) } AS conexiones
+               NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(u) } AS activa,
+               COUNT { (u)-[:CONECTA_CON]-(x:Usuario) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS conexiones
         """,
         id=uid,
     )
@@ -40,8 +43,9 @@ def perfil_completo(uid: str):
         return None
     experiencia = db.leer(
         """
-        MATCH (:Usuario {id: $id})-[t:TRABAJA_EN]->(e:Empresa)
+        MATCH (:Usuario {id: $id})-[t:TRABAJA_EN]->(e)
         RETURN e{.id, .nombre, .sector} AS empresa, t.cargo AS cargo, t.rol AS rol,
+               e:EmpresaArchivada OR EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) } AS archivada,
                t.desde AS desde, toString(t.desde) AS desde_iso, t.hasta AS hasta, t.actual AS actual
         ORDER BY t.actual DESC, t.desde DESC
         """,
@@ -67,7 +71,7 @@ def perfil_completo(uid: str):
         id=uid,
     )
     b = base[0]
-    return {"usuario": b["usuario"], "empresa": b["empresa"], "cargo": b["cargo"],
+    return {"usuario": b["usuario"], "empresa": b["empresa"], "cargo": b["cargo"], "activa": b["activa"],
             "conexiones": b["conexiones"], "experiencia": experiencia,
             "habilidades": habilidades, "proyectos": proyectos}
 
@@ -95,6 +99,7 @@ def ruta(a: str, b: str):
         """
         MATCH (a:Usuario {id: $a}), (b:Usuario {id: $b})
         MATCH p = shortestPath((a)-[:CONECTA_CON*..6]-(b))
+        WHERE all(n IN nodes(p) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(n) })
         RETURN [n IN nodes(p) | n{.id, .nombre, .apellido}] AS ruta, length(p) AS saltos
         """,
         a=a, b=b,
@@ -106,6 +111,7 @@ def contactos_en_comun(a: str, b: str):
     return db.leer(
         """
         MATCH (:Usuario {id: $a})-[:CONECTA_CON]-(c:Usuario)-[:CONECTA_CON]-(:Usuario {id: $b})
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(c) }
         RETURN DISTINCT c{.id, .nombre, .apellido, .titular} AS usuario
         ORDER BY usuario.nombre
         """,
@@ -114,12 +120,13 @@ def contactos_en_comun(a: str, b: str):
 
 
 def similares(uid: str, limite: int = 4):
-    """Usuarios con habilidades parecidas (similitud de Jaccard)."""
-    return db.leer(
+    """Usuarios con habilidades parecidas (similitud de Jaccard). Si no hay ninguno,
+    por ejemplo sin habilidades cargadas, personas de su ciudad y las mas conectadas."""
+    filas = db.leer(
         """
         MATCH (a:Usuario {id: $id})-[:TIENE_HABILIDAD]->(h:Habilidad)
         WITH a, collect(h) AS hab_a
-        MATCH (b:Usuario) WHERE b <> a
+        MATCH (b:Usuario) WHERE b <> a AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(b) }
         MATCH (b)-[:TIENE_HABILIDAD]->(hb:Habilidad)
         WITH a, hab_a, b, collect(hb) AS hab_b
         WITH b, hab_a, hab_b, [x IN hab_a WHERE x IN hab_b] AS comunes
@@ -128,6 +135,16 @@ def similares(uid: str, limite: int = 4):
                [x IN comunes | x.nombre] AS habilidades_comunes,
                round(1.0 * size(comunes) / (size(hab_a) + size(hab_b) - size(comunes)), 2) AS similitud
         ORDER BY similitud DESC, size(comunes) DESC
+        LIMIT $limite
+        """,
+        id=uid, limite=limite,
+    )
+    return filas or db.leer(
+        """
+        MATCH (a:Usuario {id: $id}), (b:Usuario)
+        WHERE b <> a AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(b) }
+        RETURN b{.id, .nombre, .apellido, .titular, .ciudad} AS usuario, [] AS habilidades_comunes
+        ORDER BY CASE WHEN b.ciudad = a.ciudad THEN 0 ELSE 1 END, COUNT { (b)-[:CONECTA_CON]-() } DESC, b.nombre
         LIMIT $limite
         """,
         id=uid, limite=limite,

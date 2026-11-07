@@ -39,8 +39,8 @@
         {% if detalle.postulacion %}
           <span class="btn btn-estado">Postulación: {{ detalle.postulacion.estado|estado_texto }} · {{ detalle.postulacion.fecha|fecha }}</span>
           {% if detalle.postulacion.estado in ('enviada', 'en_revision') %}{{ m.boton_post(yo, '/empleos/' ~ o.id ~ '/retirar', 'Retirar postulación') }}{% endif %}
-        {% elif o.estado != 'abierta' %}
-          <span class="btn btn-estado">Oferta cerrada</span>
+        {% elif o.estado != 'abierta' or detalle.vencida %}
+          <span class="btn btn-estado">Oferta {{ 'cerrada' if o.estado != 'abierta' else 'vencida' }}</span>
         {% else %}
           {{ m.boton_post(yo, '/empleos/' ~ o.id ~ '/postular', 'Postularme', 'btn btn-solido') }}
         {% endif %}
@@ -49,6 +49,15 @@
 
     <article class="tarjeta seccion">
       <h2>Qué se pide y cómo vas</h2>
+      {% set cumplidos = namespace(n=0) %}
+      {% for r in detalle.requisitos if r.tu_nivel is not none and r.tu_nivel >= r.nivel_minimo %}{% set cumplidos.n = cumplidos.n + 1 %}{% endfor %}
+      {% set total_req = detalle.requisitos|length %}
+      {% if total_req %}
+      <div class="progreso-requisitos">
+        <span>Cumples {{ cumplidos.n }} de {{ total_req }} {{ 'requisito' if total_req == 1 else 'requisitos' }}</span>
+        <span class="barra-cumplimiento" aria-hidden="true"><i style="width: {{ (cumplidos.n / total_req * 100)|round|int }}%"></i></span>
+      </div>
+      {% endif %}
       <ul class="requisitos">
         {% for r in detalle.requisitos %}
         {% set cumple = r.tu_nivel is not none and r.tu_nivel >= r.nivel_minimo %}

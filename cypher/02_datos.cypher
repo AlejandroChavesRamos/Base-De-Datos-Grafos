@@ -32,12 +32,12 @@ SET h.nombre = f.nombre, h.categoria = f.categoria;
 
 // Empresas
 UNWIND [
-  {id:'e01', nombre:'Caribe Software Labs',               sector:'Tecnologia',        tamano:'mediana', ciudad:'Barranquilla',   sitio_web:'https://caribesoftwarelabs.example.com', descripcion:'Desarrollo de software a la medida y analitica de datos para el Caribe colombiano.'},
-  {id:'e02', nombre:'PortData Logistica',                 sector:'Logistica',         tamano:'grande',  ciudad:'Barranquilla',   sitio_web:'https://portdata.example.com',           descripcion:'Operador logistico con tecnologia para seguimiento de carga portuaria.'},
+  {id:'e01', nombre:'Caribe Software Labs',               sector:'Tecnología',        tamano:'mediana', ciudad:'Barranquilla',   sitio_web:'https://caribesoftwarelabs.example.com', descripcion:'Desarrollo de software a la medida y analitica de datos para el Caribe colombiano.'},
+  {id:'e02', nombre:'PortData Logistica',                 sector:'Logística',         tamano:'grande',  ciudad:'Barranquilla',   sitio_web:'https://portdata.example.com',           descripcion:'Operador logistico con tecnologia para seguimiento de carga portuaria.'},
   {id:'e03', nombre:'Clinica Mar Caribe',                 sector:'Salud',             tamano:'grande',  ciudad:'Barranquilla',   sitio_web:'https://clinicamarcaribe.example.com',   descripcion:'Clinica de alta complejidad con servicios de telemedicina.'},
   {id:'e04', nombre:'Banco del Litoral',                  sector:'Finanzas',          tamano:'grande',  ciudad:'Barranquilla',   sitio_web:'https://bancodellitoral.example.com',    descripcion:'Entidad financiera regional con foco en banca digital.'},
-  {id:'e05', nombre:'Arenosa Creativa',                   sector:'Marketing y Diseno',tamano:'pequena', ciudad:'Barranquilla',   sitio_web:'https://arenosacreativa.example.com',    descripcion:'Agencia de marketing, branding y produccion digital.'},
-  {id:'e06', nombre:'Instituto Tecnologico del Atlantico',sector:'Educacion',         tamano:'mediana', ciudad:'Puerto Colombia',sitio_web:'https://ita.example.com',                descripcion:'Institucion de educacion superior en ingenieria y ciencias.'},
+  {id:'e05', nombre:'Arenosa Creativa',                   sector:'Marketing y Diseño',tamano:'pequena', ciudad:'Barranquilla',   sitio_web:'https://arenosacreativa.example.com',    descripcion:'Agencia de marketing, branding y produccion digital.'},
+  {id:'e06', nombre:'Instituto Tecnologico del Atlantico',sector:'Educación',         tamano:'mediana', ciudad:'Puerto Colombia',sitio_web:'https://ita.example.com',                descripcion:'Institucion de educacion superior en ingenieria y ciencias.'},
   {id:'e07', nombre:'Exportadora Costa Norte',            sector:'Comercio Exterior', tamano:'mediana', ciudad:'Barranquilla',   sitio_web:'https://costanorte.example.com',         descripcion:'Exportacion de productos agricolas y manufacturados.'}
 ] AS f
 MERGE (e:Empresa {id: f.id})

@@ -98,7 +98,7 @@ def agregar_experiencia(request: Request, f=Depends(formulario), yo: dict = Depe
         return _pagina_editar(request, yo, 422, {"experiencia": errores}, {"experiencia": f})
     ok = perfiles.agregar_experiencia(yo["id"], datos)
     return volver("/perfil/editar", aviso="experiencia_agregada" if ok else None,
-                  error=None if ok else "no_se_pudo", ancla="experiencia")
+                  error=None if ok else "experiencia_repetida", ancla="experiencia")
 
 
 @router.post("/perfil/experiencia/quitar")

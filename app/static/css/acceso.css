@@ -1,0 +1,133 @@
+/* Aspecto oscuro de login y registro: continúa la portada sin tocar formularios ni lógica. */
+@font-face {
+  font-family: "Sora";
+  src: url("../fuentes/sora-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+
+body.acceso {
+  --fondo: #05070d;
+  --tarjeta: rgba(10, 26, 51, .82);
+  --borde: rgba(245, 248, 255, .16);
+  --texto: #f5f8ff;
+  --texto-2: #b9c6dc;
+  --azul: #7cc0ff;
+  --azul-oscuro: #a9d5ff;
+  --rojo: #ff9c85;
+  --acceso-campo: rgba(5, 7, 13, .62);
+  --acceso-borde-campo: rgba(245, 248, 255, .42);
+  color-scheme: dark;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    linear-gradient(180deg, rgba(5, 7, 13, .35) 0%, rgba(5, 7, 13, .1) 55%, rgba(5, 7, 13, .45) 100%),
+    #05070d url("../animaciones/texturas/planeta-fijo.webp") center bottom / cover no-repeat fixed;
+  color: var(--texto);
+  font-family: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body.acceso .navbar {
+  background: rgba(5, 7, 13, .62);
+  border-bottom-color: var(--borde);
+  backdrop-filter: blur(12px);
+}
+
+body.acceso .logo-marca { background: transparent; }
+
+body.acceso .tarjeta {
+  background: var(--tarjeta);
+  border-color: var(--borde);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .5);
+  backdrop-filter: blur(16px);
+}
+
+body.acceso h1 { color: var(--texto); font-weight: 600; letter-spacing: -.015em; }
+
+body.acceso .formulario .sub,
+body.acceso .registro-elegir .sub,
+body.acceso .sub { color: var(--texto-2); }
+
+body.acceso .campo label { color: var(--texto-2); font-size: 13px; }
+
+body.acceso .campo input,
+body.acceso .campo select {
+  height: 44px;
+  background: var(--acceso-campo);
+  border: 1px solid var(--acceso-borde-campo);
+  border-radius: 8px;
+  color: var(--texto);
+}
+
+body.acceso .campo select option { background: #0a1a33; color: #f5f8ff; }
+
+body.acceso .campo input:-webkit-autofill,
+body.acceso .campo input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f8ff;
+  caret-color: #f5f8ff;
+  box-shadow: 0 0 0 1000px #0a1a33 inset;
+}
+
+body.acceso .campo input:focus,
+body.acceso .campo select:focus {
+  outline: 2px solid #4da3ff;
+  outline-offset: 1px;
+  border-color: #4da3ff;
+}
+
+body.acceso .campo [aria-invalid="true"] { border-color: var(--rojo); }
+
+body.acceso :focus-visible { outline-color: #7cc0ff; }
+
+body.acceso .btn { border-radius: 999px; }
+
+body.acceso .btn-solido {
+  background: #f5f8ff;
+  border-color: #f5f8ff;
+  color: #05070d;
+  transition: box-shadow .25s ease, transform .2s ease;
+}
+
+body.acceso .btn-solido:hover:not(:disabled) {
+  background: #ffffff;
+  box-shadow: 0 8px 30px rgba(77, 163, 255, .5);
+  transform: translateY(-1px);
+}
+
+body.acceso .btn-borde {
+  background: rgba(10, 26, 51, .42);
+  border-color: rgba(245, 248, 255, .36);
+  color: #f5f8ff;
+}
+
+body.acceso .btn-borde:hover { border-color: #4da3ff; text-decoration: none; }
+
+body.acceso .alerta {
+  background: rgba(122, 42, 18, .36);
+  border-color: rgba(255, 156, 133, .55);
+  color: #ffd9cf;
+}
+
+body.acceso .opcion { color: var(--texto); transition: transform .2s ease, border-color .2s ease; }
+
+body.acceso .opcion:hover {
+  border-color: #4da3ff;
+  box-shadow: 0 0 0 1px #4da3ff, 0 18px 50px rgba(77, 163, 255, .22);
+  transform: translateY(-2px);
+}
+
+body.acceso .opcion span:last-child { color: var(--texto-2); }
+
+body.acceso .icono-caja { background: rgba(77, 163, 255, .14); color: #7cc0ff; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.acceso .btn-solido, body.acceso .opcion { transition: none; }
+  body.acceso .btn-solido:hover:not(:disabled), body.acceso .opcion:hover { transform: none; }
+}

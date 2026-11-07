@@ -1,4 +1,7 @@
-"""Consultas Cypher sobre ofertas laborales."""
+"""Consultas Cypher sobre ofertas laborales.
+
+La fecha de cierre se compara con la fecha de Colombia: date() a secas va en UTC
+y daria por vencida una oferta cinco horas antes de que termine su ultimo dia."""
 from app.database import db
 
 
@@ -9,6 +12,7 @@ def recomendadas(uid: str, limite: int = 50):
         """
         MATCH (u:Usuario {id: $id})
         MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {estado: 'abierta'})
+        WHERE o.fecha_cierre >= date({timezone: 'America/Bogota'}) AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
         OPTIONAL MATCH (o)-[req:REQUIERE]->(h:Habilidad)
         OPTIONAL MATCH (u)-[tu:TIENE_HABILIDAD]->(h)
         WITH u, e, o, count(h) AS total_req,
@@ -21,6 +25,7 @@ def recomendadas(uid: str, limite: int = 50):
                CASE WHEN total_req = 0 THEN 0
                     ELSE toInteger(round(100.0 * cumple / total_req)) END AS afinidad,
                [(u)-[:CONECTA_CON]-(c:Usuario)-[:TRABAJA_EN {actual: true}]->(e)
+                  WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(c) }
                   | c{.id, .nombre, .apellido}] AS contactos,
                [(u)-[p:POSTULA_A]->(o) | p.estado][0] AS postulacion
         ORDER BY afinidad DESC, size(contactos) DESC, o.fecha_publicacion DESC
@@ -34,18 +39,19 @@ def detalle(oid: str, uid: str):
     filas = db.leer(
         """
         MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {id: $oid})
-        WHERE o.estado <> 'borrador'
+        WHERE o.estado <> 'borrador' AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
         MATCH (u:Usuario {id: $uid})
-        RETURN o{.*} AS oferta,
+        RETURN o{.*} AS oferta, o.fecha_cierre < date({timezone: 'America/Bogota'}) AS vencida,
                e{.id, .nombre, .sector, .ciudad} AS empresa,
                [(o)-[r:REQUIERE]->(h:Habilidad) |
                    {habilidad: h.nombre, nivel_minimo: r.nivel_minimo,
                     obligatoria: r.obligatoria,
                     tu_nivel: [(u)-[t:TIENE_HABILIDAD]->(h) | t.nivel][0]}] AS requisitos,
                [(u)-[:CONECTA_CON]-(c:Usuario)-[:TRABAJA_EN {actual: true}]->(e)
+                  WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(c) }
                   | c{.id, .nombre, .apellido, .titular}] AS contactos,
                [(u)-[p:POSTULA_A]->(o) | {estado: p.estado, fecha: p.fecha}][0] AS postulacion,
-               COUNT { (:Usuario)-[:POSTULA_A]->(o) } AS n_postulantes
+               COUNT { (x:Usuario)-[:POSTULA_A]->(o) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS n_postulantes
         """,
         oid=oid, uid=uid,
     )
@@ -66,7 +72,8 @@ def mis_postulaciones(uid: str):
 def demanda_habilidades(limite: int = 5):
     return db.leer(
         """
-        MATCH (:Oferta {estado: 'abierta'})-[:REQUIERE]->(h:Habilidad)
+        MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {estado: 'abierta'})-[:REQUIERE]->(h:Habilidad)
+        WHERE o.fecha_cierre >= date({timezone: 'America/Bogota'}) AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
         RETURN h.nombre AS habilidad, count(*) AS ofertas
         ORDER BY ofertas DESC, habilidad
         LIMIT $limite
@@ -122,6 +129,7 @@ def obtener_gestion(oid: str):
         """
         MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {id: $oid})
         RETURN o{.*} AS oferta, e{.id, .nombre} AS empresa,
+               o.estado = 'abierta' AND o.fecha_cierre < date({timezone: 'America/Bogota'}) AS vencida,
                [(o)-[r:REQUIERE]->(h:Habilidad) |
                    {id: h.id, nombre: h.nombre, nivel_minimo: r.nivel_minimo, obligatoria: r.obligatoria}] AS requisitos
         """,
@@ -135,7 +143,8 @@ def gestion_de_empresa(eid: str):
         """
         MATCH (:Empresa {id: $eid})-[:PUBLICA]->(o:Oferta)
         RETURN o{.id, .titulo, .estado, .modalidad, .ciudad, .fecha_publicacion, .fecha_cierre} AS oferta,
-               COUNT { (:Usuario)-[:POSTULA_A]->(o) } AS postulantes,
+               o.estado = 'abierta' AND o.fecha_cierre < date({timezone: 'America/Bogota'}) AS vencida,
+               COUNT { (x:Usuario)-[:POSTULA_A]->(o) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(x) } } AS postulantes,
                COUNT { (o)-[:REQUIERE]->() } AS requisitos
         ORDER BY CASE o.estado WHEN 'abierta' THEN 0 WHEN 'borrador' THEN 1 ELSE 2 END,
                  o.fecha_publicacion DESC
@@ -159,9 +168,11 @@ def guardar_requisito(oid: str, hid: str, nivel_minimo: int, obligatoria: bool) 
 
 
 def quitar_requisito(oid: str, hid: str) -> bool:
+    """Una oferta ya publicada debe conservar al menos un requisito."""
     filas = db.escribir(
         """
-        MATCH (:Oferta {id: $oid})-[r:REQUIERE]->(:Habilidad {id: $hid})
+        MATCH (o:Oferta {id: $oid})-[r:REQUIERE]->(:Habilidad {id: $hid})
+        WHERE o.estado = 'borrador' OR COUNT { (o)-[:REQUIERE]->() } > 1
         DELETE r
         RETURN 1 AS ok
         """,
@@ -174,15 +185,16 @@ def publicar(oid: str):
     """Borrador -> abierta, y en la MISMA transaccion avisa a las personas afines:
     buscan empleo, no trabajan en la empresa, cumplen TODAS las habilidades obligatorias
     y al menos una requerida. Devuelve cuantas personas fueron notificadas, o None si
-    no se pudo publicar (no es borrador o no tiene requisitos)."""
+    no se pudo publicar (no es borrador, no tiene requisitos o su fecha de cierre ya paso)."""
     filas = db.escribir(
         """
         MATCH (e:Empresa)-[:PUBLICA]->(o:Oferta {id: $oid})
-        WHERE o.estado = 'borrador' AND COUNT { (o)-[:REQUIERE]->() } > 0
+        WHERE o.estado = 'borrador' AND o.fecha_cierre >= date({timezone: 'America/Bogota'}) AND COUNT { (o)-[:REQUIERE]->() } > 0
         SET o.estado = 'abierta', o.fecha_publicacion = date()
         WITH e, o
         OPTIONAL MATCH (u:Usuario)
         WHERE coalesce(u.buscando_empleo, false) = true
+          AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(u) }
           AND NOT EXISTS { (u)-[:TRABAJA_EN {actual: true}]->(e) }
           AND NOT EXISTS {
                 (o)-[r:REQUIERE {obligatoria: true}]->(h:Habilidad)
@@ -217,13 +229,32 @@ def cambiar_estado(oid: str, permitidos: list[str], nuevo: str) -> bool:
     return bool(filas)
 
 
+def reabrir(oid: str) -> bool:
+    """Una oferta cuya fecha de cierre ya paso no se puede reabrir sin cambiar la fecha."""
+    filas = db.escribir(
+        """
+        MATCH (o:Oferta {id: $oid})
+        WHERE o.estado = 'cerrada' AND o.fecha_cierre >= date({timezone: 'America/Bogota'})
+        SET o.estado = 'abierta'
+        RETURN o.id AS id
+        """,
+        oid=oid,
+    )
+    return bool(filas)
+
+
 # ----- postulaciones -----
 def postular(uid: str, oid: str):
-    """Solo a ofertas abiertas y vigentes, y una sola vez por persona. Devuelve el titulo."""
+    """Solo a ofertas abiertas y vigentes, y una sola vez por persona. Devuelve el titulo.
+    El SET bloquea a la persona: varios clics simultaneos se atienden en fila."""
     filas = db.escribir(
         """
         MATCH (u:Usuario {id: $uid}), (o:Oferta {id: $oid, estado: 'abierta'})
-        WHERE o.fecha_cierre >= date() AND NOT EXISTS { (u)-[:POSTULA_A]->(o) }
+        WHERE o.fecha_cierre >= date({timezone: 'America/Bogota'})
+          AND NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(:Empresa)-[:PUBLICA]->(o) }
+        SET u.actualizado = datetime()
+        WITH u, o
+        WHERE NOT EXISTS { (u)-[:POSTULA_A]->(o) }
         CREATE (u)-[:POSTULA_A {estado: 'enviada', fecha: date()}]->(o)
         RETURN o.titulo AS titulo
         """,
@@ -250,6 +281,7 @@ def postulantes(oid: str):
     return db.leer(
         """
         MATCH (o:Oferta {id: $oid})<-[p:POSTULA_A]-(u:Usuario)
+        WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(u) }
         OPTIONAL MATCH (o)-[req:REQUIERE]->(h:Habilidad)
         OPTIONAL MATCH (u)-[tu:TIENE_HABILIDAD]->(h)
         WITH o, p, u, count(h) AS total,
@@ -260,6 +292,7 @@ def postulantes(oid: str):
                p.estado AS estado, p.fecha AS fecha, total, cumple, faltan_obligatorias,
                CASE WHEN total = 0 THEN 0 ELSE toInteger(round(100.0 * cumple / total)) END AS afinidad,
                [(u)-[:CONECTA_CON]-(c:Usuario)-[:TRABAJA_EN {actual: true}]->(:Empresa)-[:PUBLICA]->(o)
+                  WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(c) }
                   | c.nombre + ' ' + c.apellido] AS conocidos
         ORDER BY afinidad DESC, p.fecha
         """,

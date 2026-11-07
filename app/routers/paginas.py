@@ -2,16 +2,26 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
-from app.dependencias import puede_gestionar, usuario_actual, visor
+from app.dependencias import cuenta_opcional, puede_gestionar, usuario_actual, visor
 from app.repositories import (busqueda, empresas, notificaciones, ofertas,
                               red, usuarios)
 from app.routers.utiles import render
+from app.templating import templates
 
 router = APIRouter()
 
 
+def _visible(datos: dict | None, yo: dict) -> bool:
+    """Lo de una cuenta desactivada solo lo ve el personal interno."""
+    return bool(datos) and (datos.get("activa", True) or yo["tipo"] in ("admin", "staff"))
+
+
 @router.get("/")
-def inicio(request: Request, yo: dict = Depends(usuario_actual)):
+def inicio(request: Request):
+    cuenta = cuenta_opcional(request)
+    if not cuenta:
+        return templates.TemplateResponse(request, "bienvenida.html", {})
+    yo = usuario_actual(visor(cuenta))
     return render(
         request, "inicio.html", yo,
         empleos=ofertas.recomendadas(yo["id"], 3),
@@ -29,7 +39,7 @@ def mi_perfil(yo: dict = Depends(usuario_actual)):
 @router.get("/perfil/{usuario_id}")
 def perfil(request: Request, usuario_id: str, yo: dict = Depends(visor)):
     datos = usuarios.perfil_completo(usuario_id)
-    if not datos:
+    if not _visible(datos, yo):
         raise HTTPException(404, "Este perfil no existe.")
     # Empresas y staff pueden ver perfiles (p. ej. candidatos), pero sin acciones de red
     es_persona = yo["tipo"] == "persona"
@@ -48,9 +58,10 @@ def perfil(request: Request, usuario_id: str, yo: dict = Depends(visor)):
 @router.get("/empresa/{empresa_id}")
 def empresa(request: Request, empresa_id: str, yo: dict = Depends(visor)):
     datos = empresas.obtener(empresa_id, yo["id"])
-    if not datos:
+    if not _visible(datos, yo):
         raise HTTPException(404, "Esta empresa no existe.")
-    return render(request, "empresa.html", yo, e=datos, gestiona=puede_gestionar(yo, empresa_id))
+    return render(request, "empresa.html", yo, e=datos, gestiona=puede_gestionar(yo, empresa_id),
+                  equipo=empresas.empleados(empresa_id)[:5])
 
 
 @router.get("/red")
@@ -85,7 +96,7 @@ def ver_notificaciones(request: Request, yo: dict = Depends(usuario_actual)):
 @router.get("/buscar")
 def buscar(request: Request, q: str = "", yo: dict = Depends(usuario_actual)):
     resultados = busqueda.buscar(q) if q.strip() else None
-    return render(request, "buscar.html", yo, q=q, r=resultados)
+    return render(request, "buscar.html", yo, q=q, resultados=resultados)
 
 
 # --- Enlaces que usan las notificaciones de prueba ---

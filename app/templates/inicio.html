@@ -34,6 +34,9 @@
 
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Empleos recomendados para ti</h2><a href="/empleos">Ver todos</a></header>
+      {% if empleos and empleos|map(attribute='afinidad')|max == 0 %}
+      <p class="sub pad"><a href="/perfil/editar#habilidades">Agrega tus habilidades</a> para ver qué tan afines son estos empleos.</p>
+      {% endif %}
       {% for e in empleos %}
       <a class="fila-empleo" href="/empleos?oferta={{ e.oferta.id }}">
         {{ m.avatar(e.empresa.id, e.empresa.nombre, none, 48, true) }}
@@ -43,7 +46,7 @@
           <div class="sub">Cumples {{ e.cumple }} de {{ e.total_req }} requisitos
             {%- if e.contactos %} · {{ e.contactos|length }} {{ 'contacto trabaja' if e.contactos|length == 1 else 'contactos trabajan' }} aquí{% endif %}</div>
         </div>
-        <span class="afinidad" title="Afinidad con tus habilidades">{{ e.afinidad }}%</span>
+        <span class="afinidad-grupo"><span class="afinidad-barra" aria-hidden="true"><i style="width: {{ e.afinidad }}%"></i></span><span class="afinidad" title="Afinidad con tus habilidades">{{ e.afinidad }}%</span></span>
       </a>
       {% else %}
       {{ m.vacio('Aún no hay recomendaciones', 'Agrega habilidades a tu perfil para ver empleos afines.') }}
@@ -52,6 +55,7 @@
 
     {% for a in actividad %}
     <article class="tarjeta post">
+      {% if a.contacto %}
       <header class="persona">
         <a href="/perfil/{{ a.contacto.id }}" tabindex="-1">{{ m.avatar(a.contacto.id, a.contacto.nombre, a.contacto.apellido, 48) }}</a>
         <div class="persona-texto">
@@ -60,16 +64,25 @@
           <div class="sub">{{ a.fecha|hace }}</div>
         </div>
       </header>
+      {% endif %}
       {% if a.tipo == 'oferta' %}
+      {% if a.contacto %}
       <p>Trabaja en <a href="/empresa/{{ a.empresa.id }}"><strong>{{ a.empresa.nombre }}</strong></a>, que está contratando.</p>
+      {% else %}
+      <p><a href="/empresa/{{ a.empresa.id }}"><strong>{{ a.empresa.nombre }}</strong></a> está contratando <span class="sub">· {{ a.fecha|hace }}</span></p>
+      {% endif %}
       <a class="adjunto" href="/empleos?oferta={{ a.oferta.id }}">
         {{ m.avatar(a.empresa.id, a.empresa.nombre, none, 56, true) }}
         <div><strong>{{ a.oferta.titulo }}</strong>
           <div class="sub">{{ a.empresa.nombre }} · {{ a.oferta.ciudad }} · {{ a.oferta.modalidad }}</div></div>
       </a>
       {% else %}
+      {% if a.contacto %}
       <p>Participa como <strong>{{ a.rol }}</strong> en el proyecto <strong>{{ a.proyecto.nombre }}</strong>.</p>
-      <a class="adjunto adjunto-proyecto" href="/perfil/{{ a.contacto.id }}">
+      {% else %}
+      <p>Proyecto en curso en la red.</p>
+      {% endif %}
+      <a class="adjunto adjunto-proyecto" href="{{ '/perfil/' ~ a.contacto.id if a.contacto else '/proyectos' }}">
         <span class="icono-caja">{{ m.icono('proyecto', 28) }}</span>
         <div><strong>{{ a.proyecto.nombre }}</strong>
           <div class="sub">{{ a.proyecto.descripcion }}</div>
@@ -83,16 +96,17 @@
   </section>
 
   <aside class="col-der" aria-label="Sugerencias">
+    {% if sugerencias %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Personas que quizás conozcas</h2></header>
       {% for s in sugerencias %}
       <div class="sugerencia">
-        {{ m.persona(s.usuario, s.amigos_comunes ~ (' contacto en común' if s.amigos_comunes == 1 else ' contactos en común'), 48) }}
+        {{ m.persona(s.usuario, s.motivo, 48) }}
       </div>
-      {% else %}
-      {{ m.vacio('Sin sugerencias por ahora', 'Conecta con más personas para recibir sugerencias.') }}
       {% endfor %}
     </section>
+    {% endif %}
+    {% if demanda %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Habilidades más pedidas</h2></header>
       <ol class="barras">
@@ -104,6 +118,7 @@
         {% endfor %}
       </ol>
     </section>
+    {% endif %}
   </aside>
 </div>
 {% endblock %}

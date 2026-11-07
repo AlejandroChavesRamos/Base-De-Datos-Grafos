@@ -2,26 +2,49 @@
 {% import "macros.html" as m %}
 {% block titulo %}Panel{% endblock %}
 {% block contenido %}
-<div class="grid-ancho">
-  <section class="tarjeta seccion">
-    <h1>Panel de {{ yo.tipo }}</h1>
-    <p class="sub">Sesión como {{ yo.email }} · Permisos: {{ yo.permisos|sort|join(', ') }}</p>
-    {% if mensaje %}<p class="alerta alerta-ok" role="status">Cambio aplicado.</p>{% endif %}
+{# Misma clasificación que la columna Estado de la tabla: las cuatro cifras siempre cuadran. #}
+{% set desactivadas = cuentas|rejectattr('activa')|list|length %}
+{% set bloqueadas = cuentas|selectattr('activa')|selectattr('bloqueo_temporal')|list|length %}
+{% set activas = cuentas|length - desactivadas - bloqueadas %}
+<div class="panel">
+  <header class="tarjeta seccion panel-cabecera">
+    <div class="panel-identidad">
+      <p class="panel-rol">Administración</p>
+      <h1>Panel de {{ yo.tipo }}</h1>
+      <p class="sub">Sesión como <strong>{{ yo.email }}</strong></p>
+    </div>
+    <div class="panel-permisos">
+      <p class="sub">Permisos</p>
+      <ul class="etiquetas-permiso">
+        {% for permiso in yo.permisos|sort %}
+        <li class="etiqueta-permiso">{{ permiso }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% if mensaje %}<p class="alerta alerta-ok panel-mensaje" role="status">Cambio aplicado.</p>{% endif %}
+  </header>
+
+  <section class="indicadores" aria-label="Resumen de cuentas">
+    <div class="indicador" data-indicador="total"><span class="indicador-valor">{{ cuentas|length }}</span><span class="indicador-nombre">Cuentas</span></div>
+    <div class="indicador indicador-activas" data-indicador="activas"><span class="indicador-valor">{{ activas }}</span><span class="indicador-nombre">Activas</span></div>
+    <div class="indicador indicador-bloqueadas" data-indicador="bloqueadas"><span class="indicador-valor">{{ bloqueadas }}</span><span class="indicador-nombre">Bloqueo temporal</span></div>
+    <div class="indicador indicador-desactivadas" data-indicador="desactivadas"><span class="indicador-valor">{{ desactivadas }}</span><span class="indicador-nombre">Desactivadas</span></div>
   </section>
+  {% if cuentas|length >= 100 %}<p class="panel-nota" role="note">Se muestran las primeras 100 cuentas; las cifras cuentan solo estas.</p>{% endif %}
 
   <section class="tarjeta seccion">
-    <h2>Cuentas ({{ cuentas|length }})</h2>
-    <div class="tabla-scroll">
+    <h2 id="titulo-cuentas">Cuentas</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-cuentas">
       <table class="tabla">
-        <thead><tr><th scope="col">Perfil</th><th scope="col">Correo</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col"><span class="solo-lectores">Acción</span></th></tr></thead>
+        <thead><tr><th scope="col">Perfil</th><th scope="col">Correo</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col" class="col-accion"><span class="solo-lectores">Acción</span></th></tr></thead>
         <tbody>
         {% for c in cuentas %}
           <tr>
-            <td>{{ c.perfil }}</td><td>{{ c.email }}</td><td>{{ c.tipo }}</td>
+            <td class="celda-principal">{{ c.perfil }}</td><td>{{ c.email }}</td><td><span class="chip chip-tipo">{{ c.tipo }}</span></td>
             <td>{% if not c.activa %}<span class="chip estado-rechazada">Desactivada</span>
                 {% elif c.bloqueo_temporal %}<span class="chip estado-en_revision">Bloqueo temporal</span>
                 {% else %}<span class="chip estado-aceptada">Activa</span>{% endif %}</td>
-            <td>
+            <td class="col-accion">
               {% if c.id != yo.cuenta_id and (c.tipo not in ('staff', 'admin') or puede_gestionar_staff) %}
               <form method="post" action="/admin/cuentas/{{ c.id }}/estado">
                 <input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}">
@@ -39,13 +62,13 @@
 
   {% if puede_auditar %}
   <section class="tarjeta seccion">
-    <h2>Registro de actividad</h2>
-    <div class="tabla-scroll">
+    <h2 id="titulo-actividad">Registro de actividad</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-actividad">
       <table class="tabla">
         <thead><tr><th scope="col">Cuándo</th><th scope="col">Evento</th><th scope="col">Cuenta</th><th scope="col">IP</th><th scope="col">Detalle</th></tr></thead>
         <tbody>
         {% for x in eventos %}
-          <tr><td>{{ x.evento.fecha|hace }}</td><td>{{ x.evento.tipo }}</td><td>{{ x.email or '-' }}</td><td>{{ x.evento.ip }}</td><td>{{ x.evento.detalle }}</td></tr>
+          <tr><td>{{ x.evento.fecha|hace }}</td><td class="celda-principal">{{ x.evento.tipo }}</td><td>{{ x.email or '-' }}</td><td>{{ x.evento.ip }}</td><td>{{ x.evento.detalle }}</td></tr>
         {% else %}
           <tr><td colspan="5">{{ m.vacio('Sin eventos', 'Aún no se ha registrado actividad.') }}</td></tr>
         {% endfor %}

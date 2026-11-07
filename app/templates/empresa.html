@@ -18,44 +18,64 @@
       </div>
     </section>
 
+    {% if e.ofertas or gestiona %}
     <section class="tarjeta seccion">
       <h2>Empleos abiertos</h2>
       {% for o in e.ofertas %}
-      <a class="fila-empleo" href="/empleos?oferta={{ o.oferta.id }}">
+      {% set contenido_empleo %}
         <div class="fila-empleo-texto"><strong>{{ o.oferta.titulo }}</strong>
           <div class="sub">{{ o.oferta.ciudad }} · {{ o.oferta.modalidad }} · publicada {{ o.oferta.fecha_publicacion|hace }}</div></div>
-      </a>
+      {% endset %}
+      {# /empleos es solo para personas: las demás cuentas volverían a su propia página. #}
+      {% if yo.tipo == 'persona' %}
+      <a class="fila-empleo" href="/empleos?oferta={{ o.oferta.id }}">{{ contenido_empleo }}</a>
+      {% elif gestiona %}
+      <a class="fila-empleo" href="/ofertas/{{ o.oferta.id }}/gestion">{{ contenido_empleo }}</a>
       {% else %}
-      {{ m.vacio('Sin empleos abiertos', 'Esta empresa no tiene ofertas publicadas en este momento.') }}
+      <div class="fila-empleo">{{ contenido_empleo }}</div>
+      {% endif %}
+      {% else %}
+      {{ m.vacio('Publica tu primera oferta', 'Aparecerá aquí y se avisará a las personas con un perfil afín.') }}
+      <a class="btn btn-borde btn-chico" href="/empresa/{{ emp.id }}/ofertas/nueva">Crear oferta</a>
       {% endfor %}
     </section>
+    {% endif %}
   </div>
 
   <aside class="col-lateral">
     {% if yo.tipo == 'persona' %}
+    {% if e.camino %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Cómo llegas a esta empresa</h2></header>
-      {% if e.camino %}
         <p class="sub pad">{{ e.camino.saltos }} {{ 'salto' if e.camino.saltos == 1 else 'saltos' }} desde tu red.</p>
         <ol class="camino">
           {% for n in e.camino.ruta %}<li><span class="punto"></span><span>{{ n }}</span></li>{% endfor %}
         </ol>
-      {% else %}
-        <p class="sub pad">Tu red todavía no llega a esta empresa.</p>
-      {% endif %}
     </section>
+    {% endif %}
+    {% if e.contactos %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Tus contactos aquí</h2></header>
       {% for c in e.contactos %}
       <div class="pad-item">{{ m.persona({'id': c.usuario.id, 'nombre': c.usuario.nombre, 'apellido': c.usuario.apellido, 'titular': c.cargo}, none, 40) }}</div>
-      {% else %}
-      {{ m.vacio('Ningún contacto trabaja aquí', 'Conecta con personas de esta empresa para llegar más fácil.') }}
       {% endfor %}
     </section>
+    {% elif equipo %}
+    <section class="tarjeta">
+      <header class="tarjeta-cab"><h2>Personas en esta empresa</h2></header>
+      {% for x in equipo %}
+      <div class="pad-item">{{ m.persona({'id': x.usuario.id, 'nombre': x.usuario.nombre, 'apellido': x.usuario.apellido, 'titular': x.cargo}, none, 40) }}</div>
+      {% endfor %}
+    </section>
+    {% endif %}
     {% elif yo.tipo == 'empresa' and yo.id == emp.id %}
     <section class="tarjeta seccion">
       <h2>Tu empresa</h2>
       <p class="sub">Esta es la página que ven los profesionales. Desde “Gestionar ofertas” publicas vacantes y revisas postulantes.</p>
+      <div class="accesos-panel">
+        <a class="btn btn-solido" href="/empresa/{{ emp.id }}/gestion">Gestionar ofertas</a>
+        <a class="btn btn-borde" href="/empresa/{{ emp.id }}/editar">Editar datos</a>
+      </div>
     </section>
     {% endif %}
   </aside>

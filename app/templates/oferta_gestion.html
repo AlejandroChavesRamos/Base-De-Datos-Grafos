@@ -3,32 +3,14 @@
 {% block titulo %}{{ o.titulo }}{% endblock %}
 {% block contenido %}
 {% set niveles = [(1, '1 · Básico'), (2, '2 · Intermedio'), (3, '3 · Competente'), (4, '4 · Avanzado'), (5, '5 · Experto')] %}
-<div class="grid-ancho">
-  <section class="tarjeta seccion">
-    <div class="encabezado-pagina">
-      <div>
-        <p class="sub"><a href="/empresa/{{ e.id }}/gestion">← {{ e.nombre }}</a></p>
-        <h1>{{ o.titulo }} <span class="chip estado-{{ o.estado }}">{{ o.estado|capitalize }}</span></h1>
-        <p class="sub">{{ o.ciudad }} · {{ o.modalidad }} · {{ o.salario_min|cop }} – {{ o.salario_max|cop }} · cierra el {{ o.fecha_cierre|fecha }}</p>
-      </div>
-      <div class="acciones">
-        {% if o.estado == 'borrador' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/publicar', 'Publicar oferta', 'btn btn-solido') }}{% endif %}
-        {% if o.estado == 'abierta' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/cerrar', 'Cerrar oferta', 'btn btn-borde') }}{% endif %}
-        {% if o.estado == 'cerrada' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/reabrir', 'Reabrir oferta', 'btn btn-borde') }}{% endif %}
-        <a class="btn btn-borde" href="/ofertas/{{ o.id }}/editar">Editar</a>
-      </div>
-    </div>
-    {% if o.estado == 'borrador' %}<p class="sub">Para publicar necesitas al menos un requisito. Al publicar, se avisa a las personas que buscan empleo y cumplen las habilidades obligatorias.</p>{% endif %}
-    <p class="texto-libre">{{ o.descripcion }}</p>
-  </section>
-
+{% set seccion_requisitos %}
   <section class="tarjeta seccion" id="requisitos">
     <h2>Requisitos ({{ requisitos|length }})</h2>
     {% for r in requisitos|sort(attribute='nombre') %}
     <div class="fila-accion pad-fila">
       <div><strong>{{ r.nombre }}</strong> <span class="sub">· nivel mínimo {{ r.nivel_minimo }}</span>
         <span class="chip {{ 'chip-azul' if r.obligatoria }}">{{ 'Obligatoria' if r.obligatoria else 'Deseable' }}</span></div>
-      {{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/requisitos/' ~ r.id ~ '/quitar', 'Quitar') }}
+      {% if o.estado == 'borrador' or requisitos|length > 1 %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/requisitos/' ~ r.id ~ '/quitar', 'Quitar') }}{% endif %}
     </div>
     {% else %}
     {{ m.vacio('Sin requisitos', 'Agrega las habilidades que pides y el nivel mínimo de cada una.') }}
@@ -50,7 +32,8 @@
       <button class="btn btn-solido" type="submit">Guardar requisito</button>
     </form>
   </section>
-
+{% endset %}
+{% set seccion_postulantes %}
   <section class="tarjeta seccion" id="postulantes">
     <h2>Postulantes ({{ postulantes|length }})</h2>
     <p class="sub">Ordenados por afinidad: requisitos cumplidos sobre requisitos pedidos, según las habilidades de su perfil.</p>
@@ -66,12 +49,14 @@
         </div>
       </div>
       <div class="postulante-acciones">
+        <span class="afinidad-barra" aria-hidden="true"><i style="width: {{ x.afinidad }}%"></i></span>
         <span class="afinidad" title="{{ x.cumple }} de {{ x.total }} requisitos">{{ x.afinidad }}%</span>
         <span class="chip estado-{{ x.estado }}">{{ x.estado|estado_texto }}</span>
         <form method="post" action="/ofertas/{{ o.id }}/postulaciones/{{ x.usuario.id }}/estado" class="form-linea">
           {{ m.csrf(yo) }}
           <label class="solo-lectores" for="est-{{ x.usuario.id }}">Nuevo estado</label>
-          <select id="est-{{ x.usuario.id }}" name="estado" class="entrada-chica">
+          <select id="est-{{ x.usuario.id }}" name="estado" class="entrada-chica" required>
+            {% if x.estado == 'enviada' %}<option value="" selected disabled>Elegir estado</option>{% endif %}
             {% for clave, texto in estados.items() %}<option value="{{ clave }}" {{ 'selected' if clave == x.estado }}>{{ texto }}</option>{% endfor %}
           </select>
           <button class="btn btn-borde btn-chico" type="submit">Actualizar</button>
@@ -82,5 +67,31 @@
     {{ m.vacio('Aún no hay postulantes', 'Aparecerán aquí cuando las personas se postulen a esta oferta.') }}
     {% endfor %}
   </section>
+{% endset %}
+<div class="grid-ancho panel">
+  <section class="tarjeta seccion">
+    <div class="encabezado-pagina">
+      <div>
+        <p class="sub"><a href="/empresa/{{ e.id }}/gestion">← {{ e.nombre }}</a></p>
+        <h1>{{ o.titulo }} {% if vencida %}<span class="chip estado-vencida">Vencida</span>{% else %}<span class="chip estado-{{ o.estado }}">{{ o.estado|capitalize }}</span>{% endif %}</h1>
+        <p class="sub">{{ o.ciudad }} · {{ o.modalidad }} · {{ o.salario_min|cop }} – {{ o.salario_max|cop }} · cierra el {{ o.fecha_cierre|fecha }}</p>
+      </div>
+      <div class="acciones">
+        {% if o.estado == 'borrador' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/publicar', 'Publicar oferta', 'btn btn-solido') }}{% endif %}
+        {% if o.estado == 'abierta' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/cerrar', 'Cerrar oferta', 'btn btn-borde') }}{% endif %}
+        {% if o.estado == 'cerrada' %}{{ m.boton_post(yo, '/ofertas/' ~ o.id ~ '/reabrir', 'Reabrir oferta', 'btn btn-borde') }}{% endif %}
+        <a class="btn btn-borde" href="/ofertas/{{ o.id }}/editar">Editar</a>
+      </div>
+    </div>
+    {% if o.estado == 'borrador' %}{{ m.pasos_oferta(3 if requisitos else 2) }}{% endif %}
+    {% if o.estado == 'borrador' %}<p class="sub">Para publicar necesitas al menos un requisito. Al publicar, se avisa a las personas que buscan empleo y cumplen las habilidades obligatorias.</p>{% endif %}
+    {% if vencida %}<p class="sub alerta-texto">Ya pasó su fecha de cierre: no aparece en Empleos ni recibe postulaciones. Cambia la fecha de cierre para que vuelva a estar disponible.</p>{% endif %}
+    <p class="texto-libre">{{ o.descripcion }}</p>
+  </section>
+
+  <div class="oferta-cuerpo">
+    {{ seccion_postulantes }}
+    {{ seccion_requisitos }}
+  </div>
 </div>
 {% endblock %}

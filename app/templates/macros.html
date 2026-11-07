@@ -84,6 +84,19 @@
 </div>
 {%- endmacro %}
 
+{% macro pasos_oferta(actual) -%}
+<ol class="pasos-oferta" aria-label="Pasos para publicar una oferta">
+  {% for n, texto in [(1, 'Crear el borrador'), (2, 'Agregar requisitos'), (3, 'Publicar')] %}
+  <li class="paso{{ ' paso-hecho' if n < actual }}{{ ' paso-actual' if n == actual }}"{% if n == actual %} aria-current="step"{% endif %}><span class="paso-numero">{{ n }}</span><span>{{ texto }}</span></li>
+  {% endfor %}
+</ol>
+{%- endmacro %}
+
+{# La busqueda devuelve hasta 10 por grupo: con 10 puede haber mas. #}
+{% macro cantidad(lista) -%}
+<small class="cantidad">{{ lista|length }}{{ '+' if lista|length >= 10 }}</small>
+{%- endmacro %}
+
 {% macro casilla(nombre, etiqueta, marcada) -%}
 <div class="campo campo-casilla"><label><input type="checkbox" name="{{ nombre }}" {{ 'checked' if marcada }}> {{ etiqueta }}</label></div>
 {%- endmacro %}

@@ -42,7 +42,7 @@ def hash_token(token: str) -> str:
 
 def tokens_iguales(a: str, b: str) -> bool:
     """Comparacion en tiempo constante (evita ataques de temporizacion)."""
-    return secrets.compare_digest((a or "").encode(), (b or "").encode())
+    return bool(a) and bool(b) and secrets.compare_digest(a.encode(), b.encode())
 
 
 def normalizar_email(email: str) -> str:

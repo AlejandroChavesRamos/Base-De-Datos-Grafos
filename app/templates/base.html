@@ -5,13 +5,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}LinkedUn{% endblock %} | LinkedUn</title>
+  <link rel="icon" href="{{ url_for('static', path='marca/favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', path='marca/favicon-32.png') }}" sizes="32x32" type="image/png">
   <link rel="stylesheet" href="{{ url_for('static', path='css/estilos.css') }}">
+  {% block estilos %}{% if yo %}<link rel="stylesheet" href="{{ url_for('static', path='css/panel-interno.css') }}">{% endif %}{% endblock %}
 </head>
-<body>
+<body class="{% block clase_cuerpo %}{% if yo %}panel-interno{% endif %}{% endblock %}">
 {% set r = ruta_actual|default('') %}
 <header class="navbar">
   <div class="navbar-in">
-    <a class="logo" href="/" aria-label="LinkedUn, ir al inicio"><span class="logo-marca">Un</span></a>
+    <a class="logo" href="/" aria-label="LinkedUn, ir al inicio"><span class="logo-marca"><img src="{{ url_for('static', path='marca/logo-un.svg') }}" alt="" width="30" height="30"></span></a>
 
     {% if not yo %}
     <nav class="nav-publico" aria-label="Acceso">
@@ -48,7 +51,7 @@
     {% else %}
     <nav class="nav-items" aria-label="Principal">
       {% if yo.tipo == 'empresa' %}
-      <a class="nav-item" href="/empresa/{{ yo.id }}">{{ m.icono('edificio') }}<span>Mi empresa</span></a>
+      <a class="nav-item {{ 'activo' if r == '/empresa/' ~ yo.id or r.startswith('/empresa/' ~ yo.id ~ '/') or r.startswith('/ofertas/') }}" href="/empresa/{{ yo.id }}">{{ m.icono('edificio') }}<span>Mi empresa</span></a>
       {% else %}
       <a class="nav-item {{ 'activo' if r == '/admin' }}" href="/admin">{{ m.icono('usuario') }}<span>Panel</span></a>
       {% endif %}
