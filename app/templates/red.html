@@ -42,6 +42,24 @@
   </section>
   {% endif %}
 
+  {% if colaboradores %}
+  <section class="tarjeta" id="colaboradores">
+    <header class="tarjeta-cab"><h2>Colaboradores sugeridos</h2></header>
+    <p class="sub pad">Personas con las que ya compartiste un proyecto y con las que aún no estás conectado.</p>
+    <div class="rejilla-personas">
+      {% for s in colaboradores %}
+      <div class="tarjeta-persona">
+        <a href="/perfil/{{ s.usuario.id }}" tabindex="-1">{{ m.avatar(s.usuario.id, s.usuario.nombre, s.usuario.apellido, 80) }}</a>
+        <a class="nombre" href="/perfil/{{ s.usuario.id }}">{{ s.usuario.nombre }} {{ s.usuario.apellido }}</a>
+        <div class="sub">{{ s.usuario.titular }}</div>
+        <div class="sub">Proyecto: {{ s.proyectos_compartidos|join(', ') }}</div>
+        {{ m.boton_post(yo, '/conexiones/solicitar/' ~ s.usuario.id, 'Conectar', 'btn btn-borde btn-chico', volver='/red') }}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
   <section class="tarjeta">
     <header class="tarjeta-cab"><h2>Mis contactos ({{ contactos|length }})</h2></header>
     {% for c in contactos %}

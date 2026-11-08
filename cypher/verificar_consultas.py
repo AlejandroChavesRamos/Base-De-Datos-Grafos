@@ -23,7 +23,7 @@ from neo4j.exceptions import Neo4jError  # noqa: E402
 from app.database import db  # noqa: E402
 
 MODULOS = ["usuarios", "red", "ofertas", "empresas", "notificaciones", "busqueda",
-           "conexiones", "perfiles", "cuentas", "sesiones", "eventos"]
+           "conexiones", "perfiles", "cuentas", "sesiones", "eventos", "catalogo", "moderacion", "analitica", "consultas_documento"]
 
 # Argumentos de tipo diccionario: necesitan las claves que usa la consulta
 OFERTA = {"titulo": "x", "descripcion": "x", "modalidad": "remota", "ciudad": "x",
@@ -38,6 +38,8 @@ DICTS = {
     ("ofertas", "crear"): OFERTA, ("ofertas", "actualizar"): OFERTA,
     ("empresas", "actualizar"): {"nombre": "x", "sector": "x", "tamano": "x", "ciudad": "x",
                                  "descripcion": "x", "sitio_web": "x"},
+    ("cuentas", "actualizar_persona_basico"): {"nombre": "x", "apellido": "x", "titular": "x", "ciudad": "x"},
+    ("cuentas", "crear_interna"): {"cuenta_id": "x", "email": "x", "hash": "x", "tipo": "staff"},
     ("cuentas", "crear_persona"): {"cuenta_id": "x", "perfil_id": "x", "email": "x", "hash": "x", "nombre": "x",
                                    "apellido": "x", "titular": "x", "ciudad": "x"},
     ("cuentas", "crear_empresa"): {"cuenta_id": "x", "perfil_id": "x", "email": "x", "hash": "x", "nombre": "x",
@@ -81,7 +83,7 @@ def main() -> int:
     for nombre_modulo in MODULOS:
         modulo = importlib.import_module(f"app.repositories.{nombre_modulo}")
         for nombre, funcion in inspect.getmembers(modulo, inspect.isfunction):
-            if nombre.startswith("_") or funcion.__module__ != modulo.__name__:
+            if nombre.startswith("_") or nombre == "ejecutar" or funcion.__module__ != modulo.__name__:
                 continue
             firma = inspect.signature(funcion)
             args = {}
@@ -109,6 +111,28 @@ def main() -> int:
             total += n
             print(f"{'OK   ' if resultado == 'OK' else 'FALLA'} {etiqueta:<42} ({n} consulta{'s' if n != 1 else ''})"
                   + ("" if resultado == "OK" else f"\n        {resultado}"))
+    # Las consultas del documento (Q1-Q6, A1-A3, R1-R3): cada constante se revisa tal como se muestra en /consultas
+    doc = importlib.import_module("app.repositories.consultas_documento")
+    for nombre in sorted(n for n in dir(doc) if n.isupper() and isinstance(getattr(doc, n), str)):
+        texto = getattr(doc, nombre)
+        parametros = {p: (1 if p == "limite" else "x") for p in re.findall(r"\$(\w+)", texto)}
+        etiqueta = f"consultas_documento.{nombre}"
+        try:
+            _explain(texto, **parametros)
+            total += 1
+            print(f"OK    {etiqueta:<42} (1 consulta)")
+        except (Neo4jError, ParametrosFaltantes) as e:
+            total += 1
+            _estado["errores"].append(etiqueta)
+            print(f"FALLA {etiqueta:<42} (1 consulta)\n        {getattr(e, 'message', e)}")
+
+    # Informativo: el calculo de metricas de la analitica necesita el plugin Graph Data Science
+    try:
+        _ejecutar_real("EXPLAIN RETURN gds.version() AS version")
+        print("\nGraph Data Science: disponible (se pueden recalcular las metricas).")
+    except Neo4jError:
+        print("\nGraph Data Science: NO disponible. La analitica funciona, pero no se podran recalcular las metricas.")
+
     print(f"\n{total} consultas revisadas. ", end="")
     if _estado["errores"]:
         print(f"{len(_estado['errores'])} funciones con error: {_estado['errores']}")

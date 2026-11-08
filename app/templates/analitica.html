@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Analítica de la red{% endblock %}
+{% block contenido %}
+<div class="panel">
+  <header class="tarjeta seccion panel-cabecera">
+    <div class="panel-identidad">
+      <p class="panel-rol">Analítica</p>
+      <h1>{{ titulo }}</h1>
+      <p class="sub">{{ subtitulo }}</p>
+      <p class="sub" data-alcance="{{ alcance }}">{{ alcance_texto }}</p>
+      <p class="sub" data-estado-metricas>
+        {% if estado %}Métricas calculadas {{ estado.calculado_en|hace }}{% if estado.calculado_por %} por {{ estado.calculado_por }}{% endif %}.
+        {% else %}Las métricas de influencia y comunidades aún no se han calculado.{% endif %}
+      </p>
+    </div>
+    <div class="panel-acciones acciones-fila">
+      <a class="btn btn-borde" href="/analitica/mapa">Ver el mapa</a>
+      {% if puede_ver_consultas %}<a class="btn btn-borde" href="/consultas">Ver las consultas</a>{% endif %}
+      {% if puede_administrar %}
+        {% if gds %}{{ m.boton_post(yo, '/analitica/recalcular', 'Recalcular métricas', 'btn btn-solido') }}
+        {% else %}<span class="chip estado-rechazada" title="Instala el plugin Graph Data Science en la instancia">GDS no disponible</span>{% endif %}
+      {% endif %}
+    </div>
+    {% if desactualizadas %}<p class="alerta panel-mensaje" role="note">La red cambió desde el último cálculo ({{ estado.usuarios }} personas entonces, {{ resumen.usuarios }} ahora).{% if puede_administrar %} Recalcula para actualizar.{% endif %}</p>{% endif %}
+  </header>
+
+  <section class="indicadores indicadores-{{ indicadores|length }}" aria-label="Resumen">
+    {% for clave, valor, nombre in indicadores %}
+    <div class="indicador" data-indicador="{{ clave }}"><span class="indicador-valor">{{ valor if (clave != 'comunidades' or hay_metricas) else '—' }}</span><span class="indicador-nombre">{{ nombre }}</span></div>
+    {% endfor %}
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2 id="titulo-influyentes">Personas más influyentes</h2>
+    <p class="sub">PageRank pondera <em>quién</em> te conecta, no solo cuántos contactos tienes. Por eso el orden puede diferir del de simples conexiones.</p>
+    {% if influyentes %}
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-influyentes">
+      <table class="tabla" data-tabla="influyentes">
+        <thead><tr><th scope="col">#</th><th scope="col">Persona</th><th scope="col">PageRank</th><th scope="col">Conexiones</th><th scope="col">Puesto por conexiones</th><th scope="col">Comunidad</th></tr></thead>
+        <tbody>
+        {% for x in influyentes %}
+          <tr><td>{{ x.puesto }}</td>
+              <td class="celda-principal"><a href="/perfil/{{ x.usuario.id }}">{{ x.usuario.nombre }} {{ x.usuario.apellido }}</a><span class="sub bloque">{{ x.empresa or x.usuario.titular }}</span></td>
+              <td>{{ '%.3f'|format(x.pagerank) }}</td><td>{{ x.conexiones }}</td>
+              <td>{{ x.puesto_conexiones }}{% if x.puesto_conexiones != x.puesto %} <span class="sub">({{ 'sube' if x.puesto < x.puesto_conexiones else 'baja' }})</span>{% endif %}</td>
+              <td>{% if x.comunidad %}<span class="chip chip-tipo">Comunidad {{ x.comunidad }}</span>{% else %}—{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}{{ m.vacio('Sin métricas todavía', ('Calcúlalas con "Recalcular métricas".' if puede_administrar else 'Aún no hay métricas para este círculo. Un administrador las calcula periódicamente.')) }}{% endif %}
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2>Comunidades detectadas</h2>
+    <p class="sub">Grupos de personas más conectadas entre sí que con el resto (algoritmo de Louvain). El nombre sale del propio grafo: el sector donde más trabajan y sus habilidades más comunes.</p>
+    {% if comunidades %}
+    <div class="rejilla-comunidades">
+      {% for c in comunidades %}
+      <article class="comunidad" data-comunidad="{{ c.numero }}">
+        <header><span class="chip chip-azul">Comunidad {{ c.numero }}</span><span class="sub">{{ c.miembros }} {{ 'persona' if c.miembros == 1 else 'personas' }}</span></header>
+        <p class="comunidad-etiqueta">{{ c.etiqueta }}</p>
+        <p class="sub">Más influyentes: {% for u in c.lideres %}<a href="/perfil/{{ u.id }}">{{ u.nombre }} {{ u.apellido }}</a>{{ ', ' if not loop.last }}{% endfor %}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}{{ m.vacio('Sin comunidades todavía', 'Aparecen cuando se calculan las métricas.') }}{% endif %}
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2 id="titulo-puentes">Personas puente</h2>
+    <p class="sub">Intermediación: cuántos de los caminos más cortos entre otras personas pasan por ellas. Conectan grupos que de otro modo estarían separados.</p>
+    {% if puentes %}
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-puentes">
+      <table class="tabla" data-tabla="puentes">
+        <thead><tr><th scope="col">Persona</th><th scope="col">Intermediación</th><th scope="col">Conexiones</th><th scope="col">Comunidad</th></tr></thead>
+        <tbody>
+        {% for x in puentes %}
+          <tr><td class="celda-principal"><a href="/perfil/{{ x.usuario.id }}">{{ x.usuario.nombre }} {{ x.usuario.apellido }}</a><span class="sub bloque">{{ x.usuario.titular }}</span></td>
+              <td>{{ '%.1f'|format(x.intermediacion) }}</td><td>{{ x.conexiones }}</td>
+              <td>{% if x.comunidad %}<span class="chip chip-tipo">Comunidad {{ x.comunidad }}</span>{% else %}—{% endif %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}{{ m.vacio('Sin datos de intermediación', 'Se calculan junto con las demás métricas.') }}{% endif %}
+  </section>
+
+  <section class="tarjeta seccion">
+    <h2 id="titulo-demanda">Habilidades más demandadas</h2>
+    <p class="sub">Ofertas abiertas que piden cada habilidad, frente a cuántas personas la tienen en su perfil.</p>
+    {% set maximo = (demanda|map(attribute='demanda')|max) if demanda else 0 %}
+    {% if maximo %}
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-demanda">
+      <table class="tabla" data-tabla="demanda">
+        <thead><tr><th scope="col">Habilidad</th><th scope="col">Ofertas abiertas</th><th scope="col">Personas con la habilidad</th><th scope="col">Lectura</th></tr></thead>
+        <tbody>
+        {% for x in demanda if x.demanda %}
+          <tr><td class="celda-principal">{{ x.habilidad }}</td>
+              <td><span class="barra-mini" aria-hidden="true"><i style="width:{{ (x.demanda / maximo * 100)|round|int }}%"></i></span> {{ x.demanda }}</td>
+              <td>{{ x.talento }}</td>
+              <td class="sub">{{ 'Hay más ofertas que personas' if x.demanda > x.talento else ('Equilibrada' if x.demanda == x.talento else 'Hay más personas que ofertas') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}{{ m.vacio('Sin ofertas abiertas', 'Cuando haya ofertas vigentes se verá qué habilidades piden.') }}{% endif %}
+  </section>
+</div>
+{% endblock %}

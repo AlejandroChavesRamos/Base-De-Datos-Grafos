@@ -147,3 +147,12 @@ def gestor_oferta(oferta_id: str, yo: dict = Depends(visor)) -> dict:
 
 def gestor_oferta_post(yo: dict = Depends(gestor_oferta), _c: dict = Depends(verificar_csrf)) -> dict:
     return yo
+
+
+def permiso_post(codigo: str):
+    """Como permiso_requerido, pero ademas exige el token CSRF (para acciones POST)."""
+    chequeo = permiso_requerido(codigo)
+
+    def dependencia(yo: dict = Depends(chequeo), _c: dict = Depends(verificar_csrf)) -> dict:
+        return yo
+    return dependencia

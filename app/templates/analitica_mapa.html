@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Mapa de la red{% endblock %}
+{% block contenido %}
+<div class="panel">
+  <header class="tarjeta seccion panel-cabecera">
+    <div class="panel-identidad">
+      <p class="panel-rol">Analítica</p>
+      <h1>{{ 'Mapa de toda la red' if alcance == 'red' else ('Mapa de tu red' if alcance == 'persona' else 'Mapa de tu equipo') }}</h1>
+      <p class="sub">{% if alcance == 'red' %}Las personas más influyentes y sus conexiones.{% elif alcance == 'persona' %}Tú y tus contactos directos, y cómo se conectan entre sí.{% else %}Tus trabajadores y las personas que se postularon a tus ofertas, con sus vínculos con tu equipo.{% endif %}
+        Cada punto es una persona: el <strong>color</strong> es su comunidad y el <strong>tamaño</strong>, su influencia (PageRank). Toca un punto para ver su perfil.</p>
+    </div>
+    <div class="panel-acciones acciones-fila"><a class="btn btn-borde" href="/analitica">Volver a la analítica</a></div>
+  </header>
+  <section class="tarjeta seccion">
+    <div id="mapa-red" class="mapa-red" data-url="/analitica/mapa.json?alcance={{ alcance }}" role="img"
+         aria-label="Mapa de la red de contactos. Cada punto es una persona; el color indica su comunidad y el tamaño su influencia. La misma información está en texto en la página de analítica."></div>
+    <noscript><p class="alerta" role="note">El mapa necesita JavaScript. La misma información en texto está en <a href="/analitica">Analítica</a>.</p></noscript>
+    <p id="info-mapa" class="sub" aria-live="polite">Cargando el mapa…</p>
+    <ul id="leyenda-mapa" class="leyenda-mapa" aria-label="Comunidades"></ul>
+  </section>
+</div>
+<script src="{{ url_for('static', path='vendor/cytoscape/cytoscape.min.js') }}"></script>
+<script src="{{ url_for('static', path='js/mapa-red.js') }}"></script>
+{% endblock %}

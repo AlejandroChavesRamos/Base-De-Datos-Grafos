@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Nueva cuenta{% endblock %}
+{% block contenido %}
+{% set etiquetas = {'persona': 'Persona', 'empresa': 'Empresa', 'staff': 'Staff', 'admin': 'Administrador'} %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion formulario-panel">
+    <h1>Nueva cuenta</h1>
+    {% if not tipo %}
+    <p class="sub">Elige el tipo de cuenta que vas a crear.</p>
+    <div class="opciones-tipo">
+      {% for t in tipos %}<a class="btn btn-borde" href="/admin/cuentas/nueva?tipo={{ t }}">{{ etiquetas[t] }}</a>{% endfor %}
+    </div>
+    {% else %}
+    <p class="sub">Tipo: <strong>{{ etiquetas[tipo] }}</strong> · <a href="/admin/cuentas/nueva">Cambiar</a></p>
+    <form method="post" action="/admin/cuentas/nueva" novalidate>
+      {{ m.csrf(yo) }}
+      <input type="hidden" name="tipo" value="{{ tipo }}">
+      {% if tipo == 'persona' %}
+        <div class="campos-2">
+          {{ m.campo('nombre', 'Nombre', valores, errores, maximo=60) }}
+          {{ m.campo('apellido', 'Apellido', valores, errores, maximo=60) }}
+        </div>
+        {{ m.campo('titular', 'Titular profesional', valores, errores, requerido=false, maximo=120) }}
+        {{ m.campo('ciudad', 'Ciudad', valores, errores, maximo=60) }}
+      {% elif tipo == 'empresa' %}
+        {{ m.campo('nombre', 'Nombre de la empresa', valores, errores, maximo=100) }}
+        <div class="campos-2">
+          {{ m.seleccion('sector', 'Sector', sectores, valores.get('sector'), errores) }}
+          {{ m.seleccion('tamano', 'Tamaño', tamanos, valores.get('tamano'), errores) }}
+        </div>
+        {{ m.campo('ciudad', 'Ciudad', valores, errores, maximo=60) }}
+        {{ m.campo('sitio_web', 'Sitio web', valores, errores, tipo='url', requerido=false, maximo=200) }}
+        {{ m.campo('descripcion', 'Descripción', valores, errores, requerido=false, maximo=400) }}
+      {% endif %}
+      {{ m.campo('email', 'Correo de la cuenta', valores, errores, tipo='email', maximo=254) }}
+      {{ m.campo('password', 'Contraseña inicial', {}, errores, tipo='password', auto='new-password', ayuda='Mínimo 10 caracteres, con letras y números. Compártela por un canal seguro; la persona puede cambiarla en su configuración.') }}
+      {{ m.campo('password2', 'Repite la contraseña', {}, errores, tipo='password', auto='new-password') }}
+      <button class="btn btn-solido" type="submit">Crear cuenta</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -33,6 +33,30 @@
     </form>
   </section>
 {% endset %}
+{% set seccion_candidatos %}
+  {% if o.estado != 'cerrada' %}
+  <section class="tarjeta seccion" id="candidatos">
+    <h2>Candidatos sugeridos ({{ candidatos|length }})</h2>
+    <p class="sub">Personas que buscan empleo, cumplen <strong>todas</strong> las habilidades obligatorias y aún no se han postulado. Puntaje: 10 por requisito cumplido y 5 por cada contacto suyo que ya trabaja en la empresa.</p>
+    {% for x in candidatos %}
+    <article class="postulante" data-candidato="{{ x.usuario.id }}">
+      <div class="persona">
+        <a href="/perfil/{{ x.usuario.id }}" tabindex="-1">{{ m.avatar(x.usuario.id, x.usuario.nombre, x.usuario.apellido, 48) }}</a>
+        <div class="persona-texto">
+          <a class="nombre" href="/perfil/{{ x.usuario.id }}">{{ x.usuario.nombre }} {{ x.usuario.apellido }}</a>
+          <div class="sub">{{ x.usuario.titular }}</div>
+          <div class="sub">Cumple {{ x.n_cumple }} de {{ x.total_req }}: {{ x.habilidades|join(', ') }}</div>
+          {% if x.contactos %}<div class="sub">Conoce a {{ x.contactos|join(', ') }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="postulante-acciones"><span class="afinidad" title="Puntaje de recomendación">{{ x.puntaje }} pts</span></div>
+    </article>
+    {% else %}
+    {{ m.vacio('Aún no hay candidatos sugeridos', 'Agrega requisitos a la oferta; aparecerán personas que buscan empleo y cumplen las habilidades obligatorias.') }}
+    {% endfor %}
+  </section>
+  {% endif %}
+{% endset %}
 {% set seccion_postulantes %}
   <section class="tarjeta seccion" id="postulantes">
     <h2>Postulantes ({{ postulantes|length }})</h2>
@@ -91,6 +115,7 @@
 
   <div class="oferta-cuerpo">
     {{ seccion_postulantes }}
+    {{ seccion_candidatos }}
     {{ seccion_requisitos }}
   </div>
 </div>

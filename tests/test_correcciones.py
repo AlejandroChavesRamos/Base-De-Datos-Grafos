@@ -142,6 +142,7 @@ def test_gestion_de_oferta_avisa_que_vencio(cliente, como, fijar):
     fijar("ofertas.obtener_gestion", {"oferta": OFERTA, "empresa": EMPRESA, "requisitos": [REQUISITO], "vencida": True})
     fijar("perfiles.catalogo_habilidades", [])
     fijar("ofertas.postulantes", [])
+    fijar("ofertas.candidatos_sugeridos", [])
     html = cliente.get("/ofertas/o1/gestion").text
     assert 'estado-vencida">Vencida<' in html
     assert "Cambia la fecha de cierre" in html
@@ -271,6 +272,7 @@ def _gestion_oferta(fijar, postulantes, estado="abierta", requisitos=(REQUISITO,
                                       "requisitos": list(requisitos), "vencida": False})
     fijar("perfiles.catalogo_habilidades", [])
     fijar("ofertas.postulantes", postulantes)
+    fijar("ofertas.candidatos_sugeridos", [])
 
 
 def test_selector_no_aparenta_estado_en_postulacion_enviada(cliente, como, fijar):

@@ -1,0 +1,6 @@
+{# Pestañas del panel interno. Cada una aparece solo si la cuenta tiene el permiso. #}
+<nav class="nav-admin" aria-label="Secciones de administración">
+  <a href="/admin" {% if ruta_actual == '/admin' or ruta_actual.startswith('/admin/cuentas') %}aria-current="page"{% endif %}>Cuentas</a>
+  {% if 'catalogo.gestionar' in yo.permisos %}<a href="/admin/habilidades" {% if ruta_actual.startswith('/admin/habilidades') %}aria-current="page"{% endif %}>Habilidades</a>{% endif %}
+  {% if 'contenido.moderar' in yo.permisos %}<a href="/admin/contenido" {% if ruta_actual == '/admin/contenido' %}aria-current="page"{% endif %}>Contenido</a>{% endif %}
+</nav>

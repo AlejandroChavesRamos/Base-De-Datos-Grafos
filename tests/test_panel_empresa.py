@@ -38,6 +38,7 @@ def datos(monkeypatch):
     fijar("app.repositories.ofertas.gestion_de_empresa", [])
     fijar("app.repositories.ofertas.empresa_de", "e01")
     fijar("app.repositories.ofertas.postulantes", [])
+    fijar("app.repositories.ofertas.candidatos_sugeridos", [])
     fijar("app.repositories.perfiles.catalogo_habilidades", [{"id": "h1", "nombre": "Python", "categoria": "tecnica"}])
     fijar("app.repositories.usuarios.perfil_completo", {
         "usuario": {"id": "u9", "nombre": "Luis", "apellido": "Paz", "titular": "Dev", "ciudad": "Bogotá"},
@@ -68,6 +69,7 @@ def _oferta_gestion(datos, estado="borrador", requisitos=(), postulantes=()):
                    "salario_min": 1000, "salario_max": 2000, "fecha_cierre": date(2027, 1, 1), "descripcion": "Texto"},
         "empresa": {"id": "e01", "nombre": "Caribe Labs"}, "requisitos": list(requisitos)})
     datos("app.repositories.ofertas.postulantes", list(postulantes))
+    datos("app.repositories.ofertas.candidatos_sugeridos", [])
 
 
 REQUISITO = {"id": "h1", "nombre": "Python", "nivel_minimo": 3, "obligatoria": True}

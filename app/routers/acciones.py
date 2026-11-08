@@ -115,6 +115,7 @@ def _pagina_proyectos(request: Request, yo: dict, status: int = 200, err: dict |
                       val=None):
     return render(request, "proyectos.html", yo, status,
                   proyectos=perfiles.listar_proyectos(yo["id"]),
+                  relacionados=perfiles.proyectos_relacionados(yo["id"], 4),
                   catalogo=perfiles.catalogo_habilidades(), err=err or {}, val=val or {})
 
 

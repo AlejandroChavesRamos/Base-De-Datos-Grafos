@@ -96,6 +96,7 @@ def gestion_oferta(request: Request, oferta_id: str, yo: dict = Depends(gestor_o
                   vencida=datos.get("vencida"),
                   requisitos=datos["requisitos"], catalogo=perfiles.catalogo_habilidades(),
                   postulantes=ofertas.postulantes(oferta_id),
+                  candidatos=ofertas.candidatos_sugeridos(oferta_id, 5),
                   estados=validadores.ESTADOS_POSTULACION, err={})
 
 

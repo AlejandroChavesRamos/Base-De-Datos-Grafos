@@ -40,6 +40,9 @@
           <a href="/perfil/{{ yo.id }}">Ver perfil</a>
           <a href="/perfil/editar">Editar perfil</a>
           <a href="/proyectos">Proyectos</a>
+          <a href="/analitica">Analítica de la red</a>
+          {% if 'consultas.ver' in yo.permisos %}<a href="/consultas">Consultas del proyecto</a>{% endif %}
+          {% if 'usuario.bloquear' in yo.permisos %}<a href="/admin">Panel de administración</a>{% endif %}
           {% if yo.rol_empresa == 'rrhh' and yo.empresa %}<a href="/empresa/{{ yo.empresa.id }}/gestion">Gestionar {{ yo.empresa.nombre }}</a>{% endif %}
           <a href="/cuenta">Configuración de cuenta</a>
           <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar sesión</button></form>
@@ -59,6 +62,9 @@
         <summary>{{ m.avatar(yo.id, yo.nombre, none, 24, yo.tipo == 'empresa') }}<span>{{ yo.tipo|capitalize }}</span></summary>
         <div class="menu-panel">
           {% if yo.tipo == 'empresa' %}<a href="/empresa/{{ yo.id }}/gestion">Gestionar empresa</a>{% endif %}
+          {% if yo.tipo == 'empresa' or 'analitica.administrar' in yo.permisos %}<a href="/analitica">Analítica de la red</a>{% endif %}
+          {% if 'consultas.ver' in yo.permisos %}<a href="/consultas">Consultas del proyecto</a>{% endif %}
+          {% if yo.tipo == 'empresa' and 'usuario.bloquear' in yo.permisos %}<a href="/admin">Panel de administración</a>{% endif %}
           <a href="/cuenta">Configuración de cuenta</a>
           <form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar sesión</button></form>
           <form method="post" action="/logout-todas"><input type="hidden" name="csrf_token" value="{{ yo.csrf_token }}"><button class="menu-item">Cerrar todas mis sesiones</button></form>

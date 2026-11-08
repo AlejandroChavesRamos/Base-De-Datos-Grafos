@@ -38,6 +38,21 @@
     {% endfor %}
   </section>
 
+  {% if relacionados %}
+  <section class="tarjeta seccion" id="relacionados">
+    <h2>Proyectos relacionados con los tuyos</h2>
+    <p class="sub">Usan tecnologías de proyectos en los que participas.</p>
+    {% for x in relacionados %}
+    <div class="fila-accion pad-fila">
+      <div><strong>{{ x.proyecto.nombre }}</strong> <span class="sub">· {{ 'En curso' if x.proyecto.estado == 'en_curso' else 'Finalizado' }}</span>
+        <div class="chips">{% for t in x.tecnologias %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+        <div class="sub">Relacionado con: {{ x.relacionado_con|join(', ') }}</div></div>
+      {{ m.boton_post(yo, '/proyectos/' ~ x.proyecto.id ~ '/unirse', 'Unirme', volver='/proyectos') }}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   <section class="tarjeta seccion" id="nuevo">
     <h2>Crear un proyecto</h2>
     <p class="sub">Quedarás como participante. Las tecnologías conectan tu proyecto con otros similares.</p>

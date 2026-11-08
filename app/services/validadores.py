@@ -171,3 +171,16 @@ def empresa(f):
     if d["sitio_web"] and not d["sitio_web"].lower().startswith(("http://", "https://")):
         e["sitio_web"] = "Debe empezar por http:// o https://"
     return d, e
+
+
+CATEGORIAS = ["tecnica", "negocios", "creativa", "salud", "educacion", "blanda", "idioma"]
+
+
+def habilidad_catalogo(f):
+    e = {}
+    d = {"nombre": texto(f.get("nombre"), 40), "categoria": f.get("categoria", "")}
+    if len(d["nombre"]) < 2:
+        e["nombre"] = "El nombre debe tener al menos 2 caracteres."
+    if d["categoria"] not in CATEGORIAS:
+        e["categoria"] = "Elige una categoría."
+    return d, e

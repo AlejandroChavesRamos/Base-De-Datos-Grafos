@@ -46,11 +46,13 @@ def datos(monkeypatch):
     fijar("ofertas.mis_postulaciones", [])
     fijar("red.actividad", [])
     fijar("red.sugerencias", [{"usuario": _persona("u3", "Eva", "Mora"), "amigos_comunes": 2}])
+    fijar("red.colaboradores", [])
     fijar("red.solicitudes_recibidas", [{"usuario": _persona("u4", "Rosa", "Gil"), "en_comun": 1, "fecha": date(2026, 1, 1), "mensaje": "Hola"}])
     fijar("red.solicitudes_enviadas", [{"usuario": _persona("u5", "Tom", "Sol"), "fecha": date(2026, 1, 1)},
                                        {"usuario": _persona("u6", "Sol", "Paz"), "fecha": date(2026, 1, 1)}])
     fijar("red.conexiones", [{"usuario": _persona(), "empresa": "Caribe Labs", "desde": date(2024, 1, 1)}])
     fijar("notificaciones.listar", [{"n": {"id": "n1", "tipo": "conexion_solicitud", "mensaje": "Hola", "fecha": date(2026, 1, 1), "leida": False}}])
+    fijar("perfiles.proyectos_relacionados", [])
     fijar("perfiles.listar_proyectos", [{"proyecto": {"id": "p1", "nombre": "Puerto", "estado": "en_curso", "descripcion": "Texto"},
                                          "empresa": None, "miembros": 2, "tecnologias": ["Python"], "mi_rol": None}])
     fijar("perfiles.catalogo_habilidades", [{"id": "h1", "nombre": "Python", "categoria": "tecnica"}])
@@ -64,6 +66,7 @@ def datos(monkeypatch):
     fijar("empresas.obtener", {"empresa": {"id": "e1", "nombre": "Caribe Labs", "descripcion": "x", "sector": "Salud",
                                            "ciudad": "Cali", "tamano": "mediana"},
                                "empleados": 2, "ofertas": [], "contactos": [], "camino": None})
+    fijar("empresas.empleados", [])  # la pagina de empresa tambien lista su equipo
     return fijar
 
 

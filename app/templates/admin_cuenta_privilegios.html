@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Privilegios de administrador{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion {{ 'zona-peligro' if c.rol_admin }} formulario-panel">
+    <h1>{{ 'Retirar privilegios de administrador' if c.rol_admin else 'Dar privilegios de administrador' }}</h1>
+    <p><strong>{{ c.perfil.nombre if c.perfil else c.email }}{% if c.perfil and c.perfil.apellido %} {{ c.perfil.apellido }}{% endif %}</strong> · {{ c.email }} · cuenta de tipo <strong>{{ c.tipo }}</strong></p>
+    {% if c.rol_admin %}
+      <p>Esta cuenta tiene hoy los permisos del rol <strong>admin</strong>. Al retirarlos vuelve a tener solo los de su tipo ({{ c.tipo }}). Surte efecto de inmediato.</p>
+    {% else %}
+      <p>Se le agregará el rol <strong>admin</strong> <em>además</em> de su rol actual: conserva su tipo ({{ c.tipo }}), su perfil y lo que ya hace. Surte efecto de inmediato.</p>
+      <p class="sub">Con el rol admin podrá:</p>
+      <ul class="lista-impacto" data-permisos-admin>
+        {% for p in permisos_admin %}<li><code>{{ p }}</code></li>{% endfor %}
+      </ul>
+    {% endif %}
+    <form method="post" action="/admin/cuentas/{{ c.id }}/privilegios" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('password', 'Tu contraseña de administrador', {}, errores, tipo='password', auto='current-password', ayuda='Se pide para confirmar que eres tú.') }}
+      <div class="campo campo-casilla">
+        <label><input type="checkbox" name="confirmar" {% if errores.confirmar %}aria-invalid="true"{% endif %}> {{ 'Entiendo que perderá esos privilegios' if c.rol_admin else 'Entiendo que tendrá acceso a la administración' }}</label>
+        {% if errores.confirmar %}<p class="error-campo">{{ errores.confirmar }}</p>{% endif %}
+      </div>
+      <div class="acciones">
+        <button class="btn {{ 'btn-peligro' if c.rol_admin else 'btn-solido' }}" type="submit">{{ 'Retirar privilegios' if c.rol_admin else 'Dar privilegios de administrador' }}</button>
+        <a class="btn btn-borde" href="/admin">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

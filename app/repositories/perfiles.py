@@ -2,6 +2,7 @@
 import uuid
 
 from app.database import db
+from app.repositories import consultas_documento as _doc
 
 
 # ------------------------------------------------------------------ datos
@@ -175,3 +176,8 @@ def salir_proyecto(uid: str, pid: str) -> bool:
         uid=uid, pid=pid,
     )
     return bool(filas)
+
+
+def proyectos_relacionados(uid: str, limite: int = 4):
+    """Proyectos que usan tecnologias de los tuyos y en los que todavia no participas."""
+    return _doc.proyectos_relacionados(uid, limite)

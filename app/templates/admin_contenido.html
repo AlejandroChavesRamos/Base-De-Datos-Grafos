@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Contenido{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion">
+    <h1>Moderación de contenido</h1>
+    <p class="sub">Elimina ofertas o proyectos que incumplan las normas. Al borrar una oferta se avisa a quienes se postularon.</p>
+  </section>
+  <section class="tarjeta seccion">
+    <h2 id="titulo-ofertas">Ofertas ({{ ofertas|length }})</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-ofertas">
+      <table class="tabla">
+        <thead><tr><th scope="col">Oferta</th><th scope="col">Empresa</th><th scope="col">Estado</th><th scope="col">Postulantes</th><th scope="col" class="col-accion"><span class="solo-lectores">Acción</span></th></tr></thead>
+        <tbody>
+        {% for x in ofertas %}
+          <tr><td class="celda-principal">{{ x.oferta.titulo }}</td><td>{{ x.empresa }}</td><td><span class="chip estado-{{ x.oferta.estado }}">{{ x.oferta.estado|capitalize }}</span></td><td>{{ x.postulantes }}</td>
+              <td class="col-accion"><details class="confirmar"><summary class="btn btn-peligro btn-chico">Eliminar</summary>
+                <p class="sub">¿Eliminar “{{ x.oferta.titulo }}”?</p>
+                {{ m.boton_post(yo, '/admin/ofertas/' ~ x.oferta.id ~ '/eliminar', 'Sí, eliminar', 'btn btn-peligro btn-chico') }}</details></td></tr>
+        {% else %}<tr><td colspan="5">{{ m.vacio('Sin ofertas', 'No hay ofertas registradas.') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="tarjeta seccion">
+    <h2 id="titulo-proyectos">Proyectos ({{ proyectos|length }})</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-proyectos">
+      <table class="tabla">
+        <thead><tr><th scope="col">Proyecto</th><th scope="col">Empresa</th><th scope="col">Estado</th><th scope="col">Participantes</th><th scope="col" class="col-accion"><span class="solo-lectores">Acción</span></th></tr></thead>
+        <tbody>
+        {% for x in proyectos %}
+          <tr><td class="celda-principal">{{ x.proyecto.nombre }}</td><td>{{ x.empresa or 'Independiente' }}</td><td>{{ 'En curso' if x.proyecto.estado == 'en_curso' else 'Finalizado' }}</td><td>{{ x.miembros }}</td>
+              <td class="col-accion"><details class="confirmar"><summary class="btn btn-peligro btn-chico">Eliminar</summary>
+                <p class="sub">¿Eliminar “{{ x.proyecto.nombre }}”?</p>
+                {{ m.boton_post(yo, '/admin/proyectos/' ~ x.proyecto.id ~ '/eliminar', 'Sí, eliminar', 'btn btn-peligro btn-chico') }}</details></td></tr>
+        {% else %}<tr><td colspan="5">{{ m.vacio('Sin proyectos', 'No hay proyectos registrados.') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

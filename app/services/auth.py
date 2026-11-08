@@ -180,3 +180,22 @@ def cambiar_contrasena(cuenta_id: str, email: str, actual: str, nueva: str, nuev
     sesiones.revocar_otras(cuenta_id, seguridad.hash_token(token_actual))
     eventos.registrar(cuenta_id, "password_cambiada", ip, "se cerraron las demás sesiones")
     return {}
+
+
+def crear_cuenta_interna(form: dict, tipo: str) -> str:
+    """Staff o admin, creadas desde el panel (no se registran publicamente)."""
+    if tipo not in ("staff", "admin"):
+        raise ErrorFormulario({"tipo": "Tipo de cuenta no válido."})
+    email = seguridad.normalizar_email(form.get("email"))
+    errores: dict = {}
+    _validar_acceso(email, form.get("password", ""), form.get("password2", ""), errores)
+    if errores:
+        raise ErrorFormulario(errores)
+    try:
+        cuenta_id = cuentas.crear_interna({"cuenta_id": uuid.uuid4().hex, "email": email, "tipo": tipo,
+                                           "hash": seguridad.hashear(form["password"])})
+    except ConstraintError:
+        raise ErrorFormulario({"email": "Este correo ya está registrado."})
+    if not cuenta_id:
+        raise RuntimeError("Faltan los roles en la base. Ejecuta cypher/01_schema.cypher.")
+    return cuenta_id

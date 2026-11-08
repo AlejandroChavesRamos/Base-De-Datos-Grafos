@@ -72,6 +72,7 @@ def mi_red(request: Request, yo: dict = Depends(usuario_actual)):
         enviadas=red.solicitudes_enviadas(yo["id"]),
         sugerencias=red.sugerencias(yo["id"], 6),
         contactos=red.conexiones(yo["id"]),
+        colaboradores=red.colaboradores(yo["id"], 4),
     )
 
 

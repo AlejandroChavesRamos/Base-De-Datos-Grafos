@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Eliminar cuenta{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion zona-peligro formulario-panel">
+    <h1>Eliminar cuenta</h1>
+    <p><strong>{{ c.perfil }}</strong> · {{ c.email }} · tipo <strong>{{ c.tipo }}</strong></p>
+    <p>Esta acción es permanente. Se perderá lo siguiente:</p>
+    <ul class="lista-impacto">
+      {% for clave, valor in c.impacto.items() %}<li><strong>{{ valor }}</strong> {{ clave|replace('_', ' ') }}</li>{% endfor %}
+    </ul>
+    {% if c.tipo == 'persona' %}<p class="sub">Se borran su perfil, habilidades, experiencia, conexiones, postulaciones y notificaciones.</p>
+    {% elif c.tipo == 'empresa' %}<p class="sub">Se borran la cuenta y las ofertas de la empresa, con sus requisitos y postulaciones. Si alguien trabajó allí, su historial se conserva.</p>{% endif %}
+    <form method="post" action="/admin/cuentas/{{ c.id }}/eliminar" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('password', 'Tu contraseña de administrador', {}, errores, tipo='password', auto='current-password', ayuda='Se pide para confirmar que eres tú.') }}
+      <div class="campo campo-casilla">
+        <label><input type="checkbox" name="confirmar" {% if errores.confirmar %}aria-invalid="true"{% endif %}> Entiendo que no se puede deshacer</label>
+        {% if errores.confirmar %}<p class="error-campo">{{ errores.confirmar }}</p>{% endif %}
+      </div>
+      <div class="acciones">
+        <button class="btn btn-peligro" type="submit">Eliminar definitivamente</button>
+        <a class="btn btn-borde" href="/admin">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

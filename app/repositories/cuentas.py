@@ -2,6 +2,7 @@
 from neo4j.exceptions import ConstraintError  # noqa: F401  (se captura en el servicio)
 
 from app.database import db
+from app.repositories.busqueda import MARCAS, expresion_sin_tildes, sin_tildes
 
 
 def por_email(email: str):
@@ -100,7 +101,8 @@ def listar(limite: int = 100):
         RETURN c.id AS id, c.email AS email, c.tipo AS tipo, coalesce(c.activa, false) AS activa,
                coalesce(c.intentos_fallidos, 0) AS intentos,
                c.bloqueado_hasta IS NOT NULL AND c.bloqueado_hasta > datetime() AS bloqueo_temporal,
-               coalesce(p.nombre + ' ' + p.apellido, p.nombre, '-') AS perfil
+               coalesce(p.nombre + ' ' + p.apellido, p.nombre, '-') AS perfil,
+               [(c)-[:TIENE_ROL]->(r:Rol) | r.nombre] AS roles
         ORDER BY c.tipo, c.email
         LIMIT $limite
         """,
@@ -182,3 +184,151 @@ def eliminar_empresa(cuenta_id: str, perfil_id: str):
         """,
         cid=cuenta_id, pid=perfil_id,
     )
+
+
+# =====================================================================
+#  Panel de administracion: filtrar, crear y borrar cuentas
+# =====================================================================
+def listar_filtrado(limite: int = 100, texto: str = ""):
+    """Como listar(), pero solo las cuentas cuyo correo, nombre o tipo contienen TODAS las
+    palabras escritas (sin importar mayusculas ni tildes, en cualquier orden)."""
+    tokens = [t for t in sin_tildes(texto).split() if t][:6]
+    return db.leer(
+        """
+        MATCH (c:Cuenta)
+        OPTIONAL MATCH (c)-[:TIENE_PERFIL]->(p)
+        WITH c, coalesce(p.nombre + ' ' + p.apellido, p.nombre, '-') AS perfil
+        WHERE all(t IN $tokens WHERE %TEXTO% CONTAINS t)
+        RETURN c.id AS id, c.email AS email, c.tipo AS tipo, coalesce(c.activa, false) AS activa,
+               coalesce(c.intentos_fallidos, 0) AS intentos,
+               c.bloqueado_hasta IS NOT NULL AND c.bloqueado_hasta > datetime() AS bloqueo_temporal,
+               perfil, [(c)-[:TIENE_ROL]->(r:Rol) | r.nombre] AS roles
+        ORDER BY c.tipo, c.email
+        LIMIT $limite
+        """.replace("%TEXTO%", expresion_sin_tildes("c.email + ' ' + perfil + ' ' + c.tipo")),
+        tokens=tokens, marcas=MARCAS, limite=limite,
+    )
+
+
+def crear_interna(d: dict):
+    """Cuenta de staff o admin: no tiene perfil publico, solo rol."""
+    filas = db.escribir(
+        """
+        MATCH (r:Rol {nombre: $tipo})
+        CREATE (c:Cuenta {id: $cuenta_id, email: $email, password_hash: $hash, tipo: $tipo,
+                          activa: true, email_verificado: true, intentos_fallidos: 0,
+                          creada_en: datetime()})
+        CREATE (c)-[:TIENE_ROL]->(r)
+        RETURN c.id AS cuenta_id
+        """,
+        **d,
+    )
+    return filas[0]["cuenta_id"] if filas else None
+
+
+def detalle_borrado(cuenta_id: str):
+    """Que se perderia al borrar la cuenta (se muestra antes de confirmar)."""
+    filas = db.leer(
+        """
+        MATCH (c:Cuenta {id: $id})
+        OPTIONAL MATCH (c)-[:TIENE_PERFIL]->(p)
+        RETURN c.id AS id, c.email AS email, c.tipo AS tipo, p.id AS perfil_id,
+               coalesce(p.nombre + ' ' + p.apellido, p.nombre, '-') AS perfil,
+               CASE c.tipo
+                 WHEN 'persona' THEN {conexiones: COUNT { (p)-[:CONECTA_CON]-() },
+                                      postulaciones: COUNT { (p)-[:POSTULA_A]->() },
+                                      participaciones_en_proyectos: COUNT { (p)-[:PARTICIPA_EN]->() },
+                                      notificaciones: COUNT { (:Notificacion)-[:PARA]->(p) }}
+                 WHEN 'empresa' THEN {ofertas: COUNT { (p)-[:PUBLICA]->() },
+                                      postulaciones_recibidas: COUNT { (p)-[:PUBLICA]->(:Oferta)<-[:POSTULA_A]-() },
+                                      empleados_vinculados: COUNT { (:Usuario)-[:TRABAJA_EN {actual: true}]->(p) }}
+                 ELSE {sesiones: COUNT { (:Sesion)-[:DE]->(c) }}
+               END AS impacto
+        """,
+        id=cuenta_id,
+    )
+    return filas[0] if filas else None
+
+
+def eliminar_interna(cuenta_id: str):
+    db.escribir(
+        """
+        MATCH (c:Cuenta {id: $id}) WHERE c.tipo IN ['staff', 'admin']
+        OPTIONAL MATCH (s:Sesion)-[:DE]->(c)
+        WITH c, collect(s) AS ss
+        FOREACH (x IN ss | DETACH DELETE x)
+        DETACH DELETE c
+        """,
+        id=cuenta_id,
+    )
+
+
+# =====================================================================
+#  Panel de administracion: modificar cuentas y darles privilegios de admin
+# =====================================================================
+def para_editar(cuenta_id: str):
+    """Datos actuales de la cuenta y de su perfil (para llenar el formulario de edicion)."""
+    filas = db.leer(
+        """
+        MATCH (c:Cuenta {id: $id})
+        OPTIONAL MATCH (c)-[:TIENE_PERFIL]->(p)
+        RETURN c.id AS id, c.email AS email, c.tipo AS tipo, p.id AS perfil_id, p{.*} AS perfil,
+               EXISTS { (c)-[:TIENE_ROL]->(:Rol {nombre: 'admin'}) } AS rol_admin
+        """,
+        id=cuenta_id,
+    )
+    return filas[0] if filas else None
+
+
+def actualizar_email(cuenta_id: str, email: str):
+    """La restriccion de unicidad lanza ConstraintError si el correo ya existe."""
+    db.escribir("MATCH (c:Cuenta {id: $id}) SET c.email = $email", id=cuenta_id, email=email)
+
+
+def actualizar_persona_basico(perfil_id: str, d: dict) -> bool:
+    """Solo los datos basicos (no toca resumen, experiencia ni si busca empleo)."""
+    filas = db.escribir(
+        """
+        MATCH (u:Usuario {id: $id})
+        SET u.nombre = $nombre, u.apellido = $apellido, u.titular = $titular, u.ciudad = $ciudad
+        RETURN u.id AS id
+        """,
+        id=perfil_id, **d,
+    )
+    return bool(filas)
+
+
+def otorgar_admin(cuenta_id: str) -> bool:
+    """Privilegios de administrador a una cuenta EXISTENTE: se le agrega el rol 'admin' (TIENE_ROL).
+    Conserva su tipo y su perfil. Los permisos se leen del grafo en cada peticion: surte efecto al instante."""
+    filas = db.escribir(
+        """
+        MATCH (c:Cuenta {id: $id}), (r:Rol {nombre: 'admin'})
+        WHERE c.tipo <> 'admin'
+        MERGE (c)-[:TIENE_ROL]->(r)
+        RETURN c.id AS id
+        """,
+        id=cuenta_id,
+    )
+    return bool(filas)
+
+
+def quitar_admin(cuenta_id: str) -> bool:
+    filas = db.escribir(
+        """
+        MATCH (c:Cuenta {id: $id})-[t:TIENE_ROL]->(:Rol {nombre: 'admin'})
+        WHERE c.tipo <> 'admin'
+        DELETE t
+        RETURN 1 AS ok
+        """,
+        id=cuenta_id,
+    )
+    return bool(filas)
+
+
+def permisos_del_rol(rol: str) -> list[str]:
+    filas = db.leer(
+        "MATCH (:Rol {nombre: $rol})-[:PERMITE]->(p:Permiso) RETURN p.codigo AS codigo ORDER BY codigo",
+        rol=rol,
+    )
+    return [f["codigo"] for f in filas]

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Habilidades{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion">
+    <h1>Catálogo de habilidades</h1>
+    <p class="sub">Es la lista de la que eligen las personas (perfil y proyectos) y las empresas (requisitos de ofertas).</p>
+    <form method="post" action="/admin/habilidades" class="fila-form" novalidate>
+      {{ m.csrf(yo) }}
+      {{ m.campo('nombre', 'Nombre de la habilidad', valores, errores, maximo=40) }}
+      {{ m.seleccion('categoria', 'Categoría', categorias, valores.get('categoria'), errores) }}
+      <button class="btn btn-solido" type="submit">Agregar</button>
+    </form>
+  </section>
+  <section class="tarjeta seccion">
+    <h2 id="titulo-habilidades">Habilidades ({{ habilidades|length }})</h2>
+    <div class="tabla-scroll tabla-alta" tabindex="0" role="region" aria-labelledby="titulo-habilidades">
+      <table class="tabla">
+        <thead><tr><th scope="col">Habilidad</th><th scope="col">Categoría</th><th scope="col">Personas</th><th scope="col">Ofertas</th><th scope="col">Proyectos</th><th scope="col" class="col-accion"><span class="solo-lectores">Acciones</span></th></tr></thead>
+        <tbody>
+        {% for x in habilidades %}
+          <tr><td class="celda-principal">{{ x.habilidad.nombre }}</td><td><span class="chip chip-tipo">{{ x.habilidad.categoria|capitalize }}</span></td>
+              <td>{{ x.usuarios }}</td><td>{{ x.ofertas }}</td><td>{{ x.proyectos }}</td>
+              <td class="col-accion"><a class="btn btn-peligro btn-chico" href="/admin/habilidades/{{ x.habilidad.id }}/eliminar">Eliminar</a></td></tr>
+        {% else %}
+          <tr><td colspan="6">{{ m.vacio('Catálogo vacío', 'Agrega la primera habilidad con el formulario de arriba.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Modificar cuenta{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion formulario-panel">
+    <h1>Modificar cuenta</h1>
+    <p class="sub">Tipo de cuenta: <strong>{{ c.tipo }}</strong>{% if c.rol_admin and c.tipo != 'admin' %} · <span class="chip chip-azul">+ Admin</span>{% endif %}. El tipo no se cambia: para dar permisos de administración usa <strong>Privilegios</strong>.</p>
+    <form method="post" action="/admin/cuentas/{{ c.id }}/editar" novalidate>
+      {{ m.csrf(yo) }}
+      {% if c.tipo == 'persona' %}
+        <div class="campos-2">
+          {{ m.campo('nombre', 'Nombre', valores, errores, maximo=60) }}
+          {{ m.campo('apellido', 'Apellido', valores, errores, maximo=60) }}
+        </div>
+        {{ m.campo('titular', 'Titular profesional', valores, errores, requerido=false, maximo=120) }}
+        {{ m.campo('ciudad', 'Ciudad', valores, errores, maximo=60) }}
+      {% elif c.tipo == 'empresa' %}
+        {{ m.campo('nombre', 'Nombre de la empresa', valores, errores, maximo=100) }}
+        <div class="campos-2">
+          {{ m.seleccion('sector', 'Sector', sectores, valores.get('sector'), errores) }}
+          {{ m.seleccion('tamano', 'Tamaño', tamanos, valores.get('tamano'), errores) }}
+        </div>
+        {{ m.campo('ciudad', 'Ciudad', valores, errores, maximo=60) }}
+        {{ m.campo('sitio_web', 'Sitio web', valores, errores, tipo='url', requerido=false, maximo=200) }}
+        {{ m.campo('descripcion', 'Descripción', valores, errores, requerido=false, maximo=400) }}
+      {% endif %}
+      {{ m.campo('email', 'Correo de la cuenta', valores, errores, tipo='email', auto='off', maximo=254) }}
+      {{ m.campo('nueva_password', 'Restablecer contraseña', {}, errores, tipo='password', auto='new-password', requerido=false,
+                 ayuda='Déjalo vacío para no cambiarla. Si escribes una, se desbloquea la cuenta y se cierran sus sesiones abiertas.') }}
+      <hr class="separador-form">
+      {{ m.campo('password_admin', 'Tu contraseña de administrador', {}, errores, tipo='password', auto='current-password', ayuda='Se pide para confirmar que eres tú.') }}
+      <div class="acciones">
+        <button class="btn btn-solido" type="submit">Guardar cambios</button>
+        <a class="btn btn-borde" href="/admin">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

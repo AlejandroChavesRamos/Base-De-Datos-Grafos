@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Eliminar habilidad{% endblock %}
+{% block contenido %}
+<div class="panel">
+  {% include "admin_nav.html" %}
+  <section class="tarjeta seccion zona-peligro formulario-panel">
+    <h1>Eliminar “{{ h.habilidad.nombre }}”</h1>
+    {% if h.usuarios or h.ofertas or h.proyectos %}
+    <p>Esta habilidad está en uso. Al eliminarla desaparecerá de:</p>
+    <ul class="lista-impacto">
+      <li><strong>{{ h.usuarios }}</strong> perfiles de personas</li>
+      <li><strong>{{ h.ofertas }}</strong> ofertas (como requisito)</li>
+      <li><strong>{{ h.proyectos }}</strong> proyectos (como tecnología)</li>
+    </ul>
+    {% else %}<p>No está en uso. Se puede eliminar sin afectar a nadie.</p>{% endif %}
+    <form method="post" action="/admin/habilidades/{{ h.habilidad.id }}/eliminar" novalidate>
+      {{ m.csrf(yo) }}
+      <div class="campo campo-casilla">
+        <label><input type="checkbox" name="confirmar" {% if errores.confirmar %}aria-invalid="true"{% endif %}> Entiendo que se quitarán todos esos vínculos</label>
+        {% if errores.confirmar %}<p class="error-campo">{{ errores.confirmar }}</p>{% endif %}
+      </div>
+      <div class="acciones">
+        <button class="btn btn-peligro" type="submit">Eliminar habilidad</button>
+        <a class="btn btn-borde" href="/admin/habilidades">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@
 La fecha de cierre se compara con la fecha de Colombia: date() a secas va en UTC
 y daria por vencida una oferta cinco horas antes de que termine su ultimo dia."""
 from app.database import db
+from app.repositories import consultas_documento as _doc
 
 
 def recomendadas(uid: str, limite: int = 50):
@@ -315,3 +316,9 @@ def cambiar_estado_postulacion(oid: str, uid: str, estado: str, texto: str) -> b
         oid=oid, uid=uid, estado=estado, texto=texto,
     )
     return bool(filas)
+
+
+def candidatos_sugeridos(oid: str, limite: int = 5):
+    """Personas que buscan empleo, cumplen todas las habilidades obligatorias y aun no se postularon."""
+    filas = _doc.candidatos(oid, 40)
+    return [f for f in filas if f["usuario"].get("buscando_empleo") and not f["postulado"]][:limite]

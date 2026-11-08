@@ -27,8 +27,10 @@ MERGE (:Rol {nombre: nombre});
 UNWIND [
   {rol: 'persona', permisos: ['perfil.editar', 'conexion.solicitar', 'oferta.postular']},
   {rol: 'empresa', permisos: ['empresa.editar', 'oferta.publicar', 'empresa.asignar_rrhh']},
-  {rol: 'staff',   permisos: ['usuario.bloquear', 'contenido.moderar']},
-  {rol: 'admin',   permisos: ['usuario.bloquear', 'contenido.moderar', 'staff.gestionar', 'sistema.auditar']}
+  {rol: 'staff',   permisos: ['usuario.bloquear', 'contenido.moderar', 'catalogo.gestionar']},
+  {rol: 'admin',   permisos: ['usuario.bloquear', 'contenido.moderar', 'staff.gestionar', 'sistema.auditar',
+                         'usuario.crear', 'usuario.eliminar', 'usuario.editar', 'catalogo.gestionar',
+                         'analitica.administrar', 'consultas.ver']}
 ] AS fila
 MATCH (r:Rol {nombre: fila.rol})
 UNWIND fila.permisos AS codigo

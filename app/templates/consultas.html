@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Consultas del proyecto{% endblock %}
+{% block contenido %}
+<div class="panel">
+  <header class="tarjeta seccion panel-cabecera">
+    <div class="panel-identidad">
+      <p class="panel-rol">Consultas</p>
+      <h1>Las consultas del proyecto</h1>
+      <p class="sub">Cada tarjeta muestra la pregunta, la consulta <strong>Cypher exacta</strong> que se envía a Neo4j y su resultado en vivo. Todas solo leen datos y ocultan las cuentas desactivadas. Esta pantalla es solo para administración.</p>
+    </div>
+    <div class="panel-acciones acciones-fila"><a class="btn btn-borde" href="/analitica">Analítica</a></div>
+  </header>
+
+  {% for grupo, titulo in grupos %}
+  <section class="tarjeta seccion" aria-labelledby="g-{{ grupo }}">
+    <h2 id="g-{{ grupo }}">{{ titulo }}</h2>
+    {% for c in tarjetas if c.grupo == grupo %}
+    <article class="consulta" id="{{ c.id }}" data-consulta="{{ c.id }}">
+      <header class="consulta-cab"><span class="chip chip-azul">{{ c.codigo }}</span><h3>{{ c.pregunta }}</h3></header>
+
+      <form class="consulta-form" method="get" action="/consultas#{{ c.id }}">
+        <input type="hidden" name="consulta" value="{{ c.id }}">
+        {% for p in c.params %}
+          <div class="campo">
+            <label for="{{ c.id }}-{{ p.campo }}">{{ p.etiqueta }}</label>
+            <select id="{{ c.id }}-{{ p.campo }}" name="{{ p.campo }}" required>
+              <option value="">Elige una opción</option>
+              {% for valor, texto in p.opciones %}<option value="{{ valor }}" {{ 'selected' if activa == c.id and elegido.get(p.campo) == valor }}>{{ texto }}</option>{% endfor %}
+            </select>
+          </div>
+        {% endfor %}
+        <button class="btn btn-solido btn-chico" type="submit">Ejecutar</button>
+      </form>
+
+      {% if activa == c.id and resultado %}
+        <div class="consulta-resultado" data-resultado="{{ c.id }}" role="region" aria-label="Resultado de {{ c.codigo }}">
+        {% if resultado.error %}
+          <p class="alerta" role="alert">{{ resultado.error }}</p>
+        {% else %}
+          <p class="sub">{{ resultado.n }} {{ 'fila' if resultado.n == 1 else 'filas' }} · {{ '<1' if resultado.ms < 1 else resultado.ms|round|int }} ms</p>
+          {% if resultado.filas %}
+          <div class="tabla-scroll tabla-alta" tabindex="0">
+            <table class="tabla">
+              <thead><tr>{% for col in resultado.columnas %}<th scope="col">{{ col }}</th>{% endfor %}</tr></thead>
+              <tbody>
+              {% for fila in resultado.filas %}
+                <tr>{% for celda in fila %}<td>{% if celda is mapping %}<a href="{{ celda.href }}">{{ celda.t }}</a>{% else %}{{ celda }}{% endif %}</td>{% endfor %}</tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% elif resultado.sin_metricas %}
+            {{ m.vacio('Sin métricas todavía', 'Un administrador debe calcularlas con "Recalcular métricas" en Analítica.') }}
+          {% else %}
+            {{ m.vacio('Sin resultados', 'La consulta se ejecutó, pero no encontró coincidencias con esos valores.') }}
+          {% endif %}
+        {% endif %}
+        </div>
+      {% endif %}
+
+      <details class="cypher-detalle">
+        <summary>Ver la consulta Cypher</summary>
+        <pre class="cypher" tabindex="0"><code>{{ c.cypher }}</code></pre>
+        <p class="sub">Parámetros: {% for n in c.nombres_param %}<code>${{ n }}</code>{{ ', ' if not loop.last }}{% endfor %}. Los valores viajan aparte del texto, nunca pegados a él.</p>
+      </details>
+    </article>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

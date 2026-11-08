@@ -1,5 +1,6 @@
 """Consultas Cypher sobre la red de contactos."""
 from app.database import db
+from app.repositories import consultas_documento as _doc
 
 _USUARIO = "{.id, .nombre, .apellido, .titular}"
 
@@ -157,3 +158,8 @@ def actividad(uid: str, limite: int = 8):
     )
     propias = sorted(ofertas + proyectos, key=lambda x: x["fecha"], reverse=True)[:limite]
     return propias or _novedades(limite)
+
+
+def colaboradores(uid: str, limite: int = 4):
+    """Personas con las que ya compartiste un proyecto y con las que aun no estas conectado."""
+    return _doc.colaboradores(uid, limite)

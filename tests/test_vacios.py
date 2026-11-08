@@ -29,6 +29,7 @@ def base(monkeypatch):
     fijar("ofertas.demanda_habilidades", [])
     fijar("red.actividad", [])
     fijar("red.sugerencias", [])
+    fijar("red.colaboradores", [])
     fijar("usuarios.perfil_completo", {"usuario": USUARIO, "conexiones": 0, "empresa": None, "experiencia": [],
                                        "habilidades": [], "proyectos": []})
     fijar("usuarios.similares", [])

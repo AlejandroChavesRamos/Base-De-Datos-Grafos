@@ -138,6 +138,17 @@ AVISOS = {
         "requisito_quitado": "Requisito eliminado.",
         "estado_actualizado": "Estado actualizado. La persona recibió una notificación.",
         "rol_actualizado": "Rol actualizado. La persona recibió una notificación.",
+        "cuenta_creada": "Cuenta creada.",
+        "cuenta_modificada": "Cuenta actualizada.",
+        "privilegios_otorgados": "Privilegios de administrador otorgados. Surten efecto de inmediato.",
+        "privilegios_retirados": "Privilegios de administrador retirados.",
+        "cuenta_eliminada_admin": "Cuenta eliminada.",
+        "habilidad_creada": "Habilidad agregada al catálogo.",
+        "habilidad_eliminada": "Habilidad eliminada del catálogo.",
+        "oferta_moderada": "Oferta eliminada. Las personas que se habían postulado fueron avisadas.",
+        "proyecto_eliminado": "Proyecto eliminado.",
+        "metricas_recalculadas": "Métricas recalculadas: influencia, comunidades e intermediación.",
+        "metricas_parciales": "Métricas recalculadas, pero algún algoritmo no se pudo ejecutar. Revisa el registro de actividad.",
     },
     "error": {
         "no_se_pudo": "No se pudo completar la acción. Puede que ya se hubiera realizado.",
@@ -147,6 +158,8 @@ AVISOS = {
         "requisito_necesario": "Una oferta publicada debe conservar al menos un requisito.",
         "experiencia_repetida": "Ya tienes registrada esa empresa con la misma fecha de inicio.",
         "dato_invalido": "Revisa los datos del formulario.",
+        "gds_no_disponible": "El plugin Graph Data Science no está disponible en la instancia de Neo4j: no se pueden calcular las métricas.",
+        "metricas_fallidas": "No se pudieron calcular las métricas. Revisa el registro de actividad.",
     },
 }
 templates.env.globals["AVISOS"] = AVISOS
