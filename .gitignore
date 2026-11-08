@@ -1,3 +1,27 @@
+# --- Secretos y configuración local: NUNCA al repositorio ---
 .env
+.env.*
+!.env.example
+
+# --- Entornos y archivos generados ---
 venv/
+.venv/
 __pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+*.log
+
+# --- Editor y sistema operativo ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Herramientas de agentes y archivos sueltos (no son parte del proyecto) ---
+docs/superpowers/
+.claude/
+.superpowers/
+.worktrees/
+package-lock.json
+*.zip
