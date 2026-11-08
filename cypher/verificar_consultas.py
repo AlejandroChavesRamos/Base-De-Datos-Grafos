@@ -23,7 +23,7 @@ from neo4j.exceptions import Neo4jError  # noqa: E402
 from app.database import db  # noqa: E402
 
 MODULOS = ["usuarios", "red", "ofertas", "empresas", "notificaciones", "busqueda",
-           "conexiones", "perfiles", "cuentas", "sesiones", "eventos", "catalogo", "moderacion", "analitica", "consultas_documento"]
+           "conexiones", "perfiles", "cuentas", "sesiones", "eventos", "catalogo", "moderacion", "analitica", "consultas_documento", "caminos"]
 
 # Argumentos de tipo diccionario: necesitan las claves que usa la consulta
 OFERTA = {"titulo": "x", "descripcion": "x", "modalidad": "remota", "ciudad": "x",

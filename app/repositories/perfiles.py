@@ -181,3 +181,8 @@ def salir_proyecto(uid: str, pid: str) -> bool:
 def proyectos_relacionados(uid: str, limite: int = 4):
     """Proyectos que usan tecnologias de los tuyos y en los que todavia no participas."""
     return _doc.proyectos_relacionados(uid, limite)
+
+
+def proyectos_afines(limite: int = 6):
+    """Pares de proyectos que comparten tecnologias o miembros (consulta Q5)."""
+    return _doc.proyectos_afines(limite)

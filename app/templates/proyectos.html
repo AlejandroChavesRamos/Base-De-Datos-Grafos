@@ -38,6 +38,24 @@
     {% endfor %}
   </section>
 
+  {% if afines %}
+  <section class="tarjeta seccion" id="afines">
+    <h2>Proyectos que comparten tecnologías o miembros</h2>
+    <p class="sub">Los pares de proyectos más parecidos de la red: una tecnología en común suma 1 punto y cada persona que participa en ambos, 2.</p>
+    <div class="tabla-scroll tabla-alta" tabindex="0">
+      <table class="tabla" data-tabla="afines">
+        <thead><tr><th scope="col">Proyecto</th><th scope="col">Proyecto</th><th scope="col">Tecnologías en común</th><th scope="col">Personas en ambos</th><th scope="col">Afinidad</th></tr></thead>
+        <tbody>
+        {% for x in afines %}
+          <tr><td class="celda-principal">{{ x.proyecto_1 }}</td><td class="celda-principal">{{ x.proyecto_2 }}</td>
+              <td>{{ x.tecnologias|join(', ') or '—' }}</td><td>{{ x.miembros|join(', ') or '—' }}</td><td>{{ x.afinidad }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
   {% if relacionados %}
   <section class="tarjeta seccion" id="relacionados">
     <h2>Proyectos relacionados con los tuyos</h2>

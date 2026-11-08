@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Caminos{% endblock %}
+{% block contenido %}
+<div class="panel">
+  <header class="tarjeta seccion panel-cabecera">
+    <div class="panel-identidad">
+      <p class="panel-rol">Tu red</p>
+      <h1>Caminos desde ti</h1>
+      <p class="sub">Descubre cómo llegas a una persona, a una empresa o a una oferta laboral pasando por tus contactos. Se camina por conexiones y por empleo vigente, y se muestran todas las rutas más cortas.</p>
+    </div>
+  </header>
+
+  {% if resultado and resultado.error and resultado.tipo not in tipos %}<p class="alerta" role="alert">{{ resultado.error }}</p>{% endif %}
+
+  {% for clave, (titulo, pregunta, _f) in tipos.items() %}
+  <section class="tarjeta seccion" id="camino-{{ clave }}" data-camino="{{ clave }}">
+    <h2>{{ titulo }}</h2>
+    <p class="sub">{{ pregunta }}</p>
+    <form class="consulta-form" method="get" action="/caminos#camino-{{ clave }}">
+      <input type="hidden" name="tipo" value="{{ clave }}">
+      <div class="campo">
+        <label for="destino-{{ clave }}">Destino</label>
+        <select id="destino-{{ clave }}" name="destino" required>
+          <option value="">Elige una opción</option>
+          {% for valor, texto in opciones[clave] %}<option value="{{ valor }}" {{ 'selected' if resultado and resultado.tipo == clave and resultado.destino == valor }}>{{ texto }}</option>{% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-solido btn-chico" type="submit">Ver caminos</button>
+    </form>
+
+    {% if resultado and resultado.tipo == clave %}
+    <div class="consulta-resultado" data-resultado="{{ clave }}" role="region" aria-label="Caminos hacia {{ resultado.nombre|default('el destino') }}">
+      {% if resultado.error %}
+        <p class="alerta" role="alert">{{ resultado.error }}</p>
+      {% elif not resultado.rutas %}
+        {{ m.vacio('Sin camino todavía', 'Tu red no llega a ' ~ resultado.nombre ~ ' por contactos ni por empleo vigente. Conectar con más personas amplía tus caminos.') }}
+      {% else %}
+        <p class="sub">{{ resultado.rutas|length }} {{ 'ruta' if resultado.rutas|length == 1 else 'rutas' }} de {{ resultado.rutas[0].saltos }} {{ 'salto' if resultado.rutas[0].saltos == 1 else 'saltos' }}{% if clave == 'persona' %} · {{ resultado.rutas[0].saltos|grado }} grado de conexión{% endif %}</p>
+        {% for r in resultado.rutas %}
+        <ol class="camino" data-ruta>
+          {% for n in r.ruta %}<li><span class="punto"></span><span>{{ 'Tú' if loop.first else n }}</span></li>{% endfor %}
+          {% if clave == 'oferta' %}<li><span class="punto"></span><span>Oferta: {{ r.oferta }}</span></li>{% endif %}
+        </ol>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -75,6 +75,20 @@
       <p>{{ o.descripcion }}</p>
     </article>
 
+    <article class="tarjeta seccion" id="camino-oferta">
+      <h2>Cómo llegas a esta oferta</h2>
+      {% if camino %}
+        <p class="sub">{{ 'Ya trabajas en la empresa que la publica.' if camino.ruta|length == 2 else (camino.saltos ~ ' saltos desde ti hasta la oferta, pasando por la empresa que la publica.') }}</p>
+        <ol class="camino" data-ruta>
+          {% for n in camino.ruta %}<li><span class="punto"></span><span>{{ 'Tú' if loop.first else n }}</span></li>{% endfor %}
+          <li><span class="punto"></span><span>Oferta: {{ camino.oferta }}</span></li>
+        </ol>
+        <p class="sub"><a href="/caminos?tipo=oferta&destino={{ o.id }}#camino-oferta">Ver todas las rutas más cortas</a></p>
+      {% else %}
+        <p class="sub">Tu red todavía no llega a {{ detalle.empresa.nombre }}: no hay una ruta por contactos ni por empleo vigente.</p>
+      {% endif %}
+    </article>
+
     {% if detalle.contactos %}
     <article class="tarjeta seccion">
       <h2>Tus contactos en {{ detalle.empresa.nombre }}</h2>

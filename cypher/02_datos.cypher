@@ -1,4 +1,12 @@
-
+// =====================================================================
+// 02_datos.cypher  -  Datos de demostracion (red profesional de Barranquilla)
+// Ejecutar DESPUES de 01_schema.cypher. Es idempotente (MERGE): se puede repetir.
+//
+// FECHAS: las de las ofertas, postulaciones, invitaciones y avisos son RELATIVAS al dia en que se
+// ejecuta el script (publicada_hace / cierra_en / hace_dias), asi la demostracion no caduca al
+// llegar una fecha fija. Las ofertas abiertas cierran entre 63 y 88 dias despues de la carga.
+// Para renovar ese plazo mas adelante sin tocar nada mas: 08_renovar_fechas_demo.cypher.
+// =====================================================================
 // Habilidades
 UNWIND [
   {id:'h01', nombre:'Python',                categoria:'tecnica'},
@@ -187,14 +195,14 @@ SET r.desde = date(p[2]);
 
 //Relacion Solicita conexion
 UNWIND [
-  ['u26','u05','Hola Laura, soy estudiante y me gustaria aprender de tu experiencia en React.','2026-10-28'],
-  ['u25','u08','Hola Felipe, trabajamos en el mismo ecosistema creativo, conectemos.','2026-10-29'],
-  ['u10','u01','Camila, me interesa conocer mas sobre analitica de datos en logistica.','2026-10-30'],
-  ['u23','u08','Felipe, admiro tu trabajo en UX. Me encantaria conectar.','2026-10-31']
+  ['u26','u05','Hola Laura, soy estudiante y me gustaria aprender de tu experiencia en React.',10],
+  ['u25','u08','Hola Felipe, trabajamos en el mismo ecosistema creativo, conectemos.',9],
+  ['u10','u01','Camila, me interesa conocer mas sobre analitica de datos en logistica.',8],
+  ['u23','u08','Felipe, admiro tu trabajo en UX. Me encantaria conectar.',7]
 ] AS s
 MATCH (a:Usuario {id: s[0]}), (b:Usuario {id: s[1]})
 MERGE (a)-[r:SOLICITA_CONEXION]->(b)
-SET r.mensaje = s[2], r.fecha = date(s[3]);
+SET r.mensaje = s[2], r.fecha = date({timezone: 'America/Bogota'}) - duration({days: s[3]});
 
 //Proyectos
 UNWIND [
@@ -253,19 +261,19 @@ SET r.rol = t[2];
 
 //ofertas 
 UNWIND [
-  {id:'o01', empresa:'e01', publicada_por:'u27', titulo:'Desarrollador Backend Python',       descripcion:'Construccion de APIs y servicios de datos.',            modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:6000000, salario_max:9000000,  estado:'abierta', fecha_publicacion:'2026-10-05', fecha_cierre:'2026-11-30'},
-  {id:'o02', empresa:'e01', publicada_por:'u27', titulo:'Ingeniero de Datos Senior',          descripcion:'Diseno de pipelines y modelos analiticos.',             modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:9000000, salario_max:13000000, estado:'abierta', fecha_publicacion:'2026-10-08', fecha_cierre:'2026-12-05'},
-  {id:'o03', empresa:'e01', publicada_por:'u27', titulo:'Desarrollador Full Stack React',     descripcion:'Interfaces web y APIs para clientes del Caribe.',       modalidad:'remota',     ciudad:'Barranquilla', salario_min:5500000, salario_max:8500000,  estado:'abierta', fecha_publicacion:'2026-10-10', fecha_cierre:'2026-12-10'},
-  {id:'o04', empresa:'e04', publicada_por:'u13', titulo:'Analista de Ciberseguridad',         descripcion:'Monitoreo y respuesta a incidentes.',                   modalidad:'presencial', ciudad:'Barranquilla', salario_min:7000000, salario_max:10000000, estado:'abierta', fecha_publicacion:'2026-10-02', fecha_cierre:'2026-11-25'},
-  {id:'o05', empresa:'e04', publicada_por:'u13', titulo:'Cientifico de Datos',                descripcion:'Modelos de riesgo y deteccion de fraude.',              modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:9000000, salario_max:14000000, estado:'abierta', fecha_publicacion:'2026-10-06', fecha_cierre:'2026-12-01'},
-  {id:'o06', empresa:'e02', publicada_por:'e02', titulo:'Coordinador Logistico Portuario',    descripcion:'Coordinacion de operaciones de carga en el puerto.',    modalidad:'presencial', ciudad:'Barranquilla', salario_min:5000000, salario_max:7500000,  estado:'abierta', fecha_publicacion:'2026-10-01', fecha_cierre:'2026-11-20'},
-  {id:'o07', empresa:'e07', publicada_por:'e07', titulo:'Analista de Comercio Exterior',      descripcion:'Gestion de exportaciones y documentacion aduanera.',    modalidad:'presencial', ciudad:'Barranquilla', salario_min:4500000, salario_max:6500000,  estado:'abierta', fecha_publicacion:'2026-10-12', fecha_cierre:'2026-12-12'},
-  {id:'o08', empresa:'e03', publicada_por:'u17', titulo:'Enfermero/a Especialista UCI',       descripcion:'Cuidado de pacientes en unidad de cuidados intensivos.',modalidad:'presencial', ciudad:'Barranquilla', salario_min:4800000, salario_max:6800000,  estado:'abierta', fecha_publicacion:'2026-10-04', fecha_cierre:'2026-11-28'},
-  {id:'o09', empresa:'e06', publicada_por:'e06', titulo:'Docente de Ingenieria de Sistemas',  descripcion:'Catedra en programacion y bases de datos.',             modalidad:'presencial', ciudad:'Puerto Colombia', salario_min:4000000, salario_max:6000000, estado:'abierta', fecha_publicacion:'2026-10-03', fecha_cierre:'2026-12-15'},
-  {id:'o10', empresa:'e05', publicada_por:'e05', titulo:'Disenador UX/UI',                    descripcion:'Diseno de productos digitales para marcas regionales.', modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:4500000, salario_max:7000000,  estado:'abierta', fecha_publicacion:'2026-10-07', fecha_cierre:'2026-11-27'},
-  {id:'o11', empresa:'e05', publicada_por:'e05', titulo:'Especialista en Marketing Digital',  descripcion:'Planeacion y analitica de campanas.',                   modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:4000000, salario_max:6000000,  estado:'abierta', fecha_publicacion:'2026-10-09', fecha_cierre:'2026-12-02'},
-  {id:'o12', empresa:'e02', publicada_por:'e02', titulo:'DevOps Engineer',                    descripcion:'Infraestructura y despliegue de la plataforma logistica.',modalidad:'remota',   ciudad:'Barranquilla', salario_min:8000000, salario_max:12000000, estado:'abierta', fecha_publicacion:'2026-10-11', fecha_cierre:'2026-12-08'},
-  {id:'o13', empresa:'e03', publicada_por:'u17', titulo:'Analista Administrativo Hospitalario',descripcion:'Gestion administrativa y facturacion hospitalaria.',   modalidad:'presencial', ciudad:'Barranquilla', salario_min:3800000, salario_max:5200000,  estado:'cerrada', fecha_publicacion:'2026-08-10', fecha_cierre:'2026-09-10'}
+  {id:'o01', empresa:'e01', publicada_por:'u27', titulo:'Desarrollador Backend Python',       descripcion:'Construccion de APIs y servicios de datos.',            modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:6000000, salario_max:9000000,  estado:'abierta', publicada_hace:33, cierra_en:73},
+  {id:'o02', empresa:'e01', publicada_por:'u27', titulo:'Ingeniero de Datos Senior',          descripcion:'Diseno de pipelines y modelos analiticos.',             modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:9000000, salario_max:13000000, estado:'abierta', publicada_hace:30, cierra_en:78},
+  {id:'o03', empresa:'e01', publicada_por:'u27', titulo:'Desarrollador Full Stack React',     descripcion:'Interfaces web y APIs para clientes del Caribe.',       modalidad:'remota',     ciudad:'Barranquilla', salario_min:5500000, salario_max:8500000,  estado:'abierta', publicada_hace:28, cierra_en:83},
+  {id:'o04', empresa:'e04', publicada_por:'u13', titulo:'Analista de Ciberseguridad',         descripcion:'Monitoreo y respuesta a incidentes.',                   modalidad:'presencial', ciudad:'Barranquilla', salario_min:7000000, salario_max:10000000, estado:'abierta', publicada_hace:36, cierra_en:68},
+  {id:'o05', empresa:'e04', publicada_por:'u13', titulo:'Cientifico de Datos',                descripcion:'Modelos de riesgo y deteccion de fraude.',              modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:9000000, salario_max:14000000, estado:'abierta', publicada_hace:32, cierra_en:74},
+  {id:'o06', empresa:'e02', publicada_por:'e02', titulo:'Coordinador Logistico Portuario',    descripcion:'Coordinacion de operaciones de carga en el puerto.',    modalidad:'presencial', ciudad:'Barranquilla', salario_min:5000000, salario_max:7500000,  estado:'abierta', publicada_hace:37, cierra_en:63},
+  {id:'o07', empresa:'e07', publicada_por:'e07', titulo:'Analista de Comercio Exterior',      descripcion:'Gestion de exportaciones y documentacion aduanera.',    modalidad:'presencial', ciudad:'Barranquilla', salario_min:4500000, salario_max:6500000,  estado:'abierta', publicada_hace:26, cierra_en:85},
+  {id:'o08', empresa:'e03', publicada_por:'u17', titulo:'Enfermero/a Especialista UCI',       descripcion:'Cuidado de pacientes en unidad de cuidados intensivos.',modalidad:'presencial', ciudad:'Barranquilla', salario_min:4800000, salario_max:6800000,  estado:'abierta', publicada_hace:34, cierra_en:71},
+  {id:'o09', empresa:'e06', publicada_por:'e06', titulo:'Docente de Ingenieria de Sistemas',  descripcion:'Catedra en programacion y bases de datos.',             modalidad:'presencial', ciudad:'Puerto Colombia', salario_min:4000000, salario_max:6000000, estado:'abierta', publicada_hace:35, cierra_en:88},
+  {id:'o10', empresa:'e05', publicada_por:'e05', titulo:'Disenador UX/UI',                    descripcion:'Diseno de productos digitales para marcas regionales.', modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:4500000, salario_max:7000000,  estado:'abierta', publicada_hace:31, cierra_en:70},
+  {id:'o11', empresa:'e05', publicada_por:'e05', titulo:'Especialista en Marketing Digital',  descripcion:'Planeacion y analitica de campanas.',                   modalidad:'hibrida',    ciudad:'Barranquilla', salario_min:4000000, salario_max:6000000,  estado:'abierta', publicada_hace:29, cierra_en:75},
+  {id:'o12', empresa:'e02', publicada_por:'e02', titulo:'DevOps Engineer',                    descripcion:'Infraestructura y despliegue de la plataforma logistica.',modalidad:'remota',   ciudad:'Barranquilla', salario_min:8000000, salario_max:12000000, estado:'abierta', publicada_hace:27, cierra_en:81},
+  {id:'o13', empresa:'e03', publicada_por:'u17', titulo:'Analista Administrativo Hospitalario',descripcion:'Gestion administrativa y facturacion hospitalaria.',   modalidad:'presencial', ciudad:'Barranquilla', salario_min:3800000, salario_max:5200000,  estado:'cerrada', publicada_hace:89, cierra_en:-58}
 ] AS f
 MERGE (o:Oferta {id: f.id})
 SET o.titulo = f.titulo,
@@ -275,12 +283,12 @@ SET o.titulo = f.titulo,
     o.salario_min = f.salario_min,
     o.salario_max = f.salario_max,
     o.estado = f.estado,
-    o.fecha_publicacion = date(f.fecha_publicacion),
-    o.fecha_cierre = date(f.fecha_cierre)
+    o.fecha_publicacion = date({timezone: 'America/Bogota'}) - duration({days: f.publicada_hace}),
+    o.fecha_cierre = date({timezone: 'America/Bogota'}) + duration({days: f.cierra_en})
 WITH o, f
 MATCH (e:Empresa {id: f.empresa})
 MERGE (e)-[r:PUBLICA]->(o)
-SET r.fecha = date(f.fecha_publicacion), r.publicada_por = f.publicada_por;
+SET r.fecha = date({timezone: 'America/Bogota'}) - duration({days: f.publicada_hace}), r.publicada_por = f.publicada_por;
 
 //Requiere
 UNWIND [
@@ -304,41 +312,41 @@ SET r.nivel_minimo = t[2], r.obligatoria = t[3];
 
 //Relacion Postula
 UNWIND [
-  ['u26','o01','enviada','2026-10-20'],
-  ['u02','o02','en_revision','2026-10-18'],
-  ['u03','o02','en_revision','2026-10-19'],
-  ['u07','o02','enviada','2026-10-21'],
-  ['u26','o03','enviada','2026-10-22'],
-  ['u04','o04','en_revision','2026-10-17'],
-  ['u18','o05','enviada','2026-10-23'],
-  ['u07','o05','rechazada','2026-10-15'],
-  ['u11','o06','en_revision','2026-10-16'],
-  ['u11','o07','enviada','2026-10-24'],
-  ['u19','o09','en_revision','2026-10-14'],
-  ['u02','o09','enviada','2026-10-25'],
-  ['u21','o10','rechazada','2026-10-12'],
-  ['u25','o11','enviada','2026-10-26'],
-  ['u23','o11','en_revision','2026-10-13'],
-  ['u26','o12','enviada','2026-10-27'],
-  ['u06','o12','rechazada','2026-10-11'],
-  ['u16','o13','rechazada','2026-08-20']
+  ['u26','o01','enviada',18],
+  ['u02','o02','en_revision',20],
+  ['u03','o02','en_revision',19],
+  ['u07','o02','enviada',17],
+  ['u26','o03','enviada',16],
+  ['u04','o04','en_revision',21],
+  ['u18','o05','enviada',15],
+  ['u07','o05','rechazada',23],
+  ['u11','o06','en_revision',22],
+  ['u11','o07','enviada',14],
+  ['u19','o09','en_revision',24],
+  ['u02','o09','enviada',13],
+  ['u21','o10','rechazada',26],
+  ['u25','o11','enviada',12],
+  ['u23','o11','en_revision',25],
+  ['u26','o12','enviada',11],
+  ['u06','o12','rechazada',27],
+  ['u16','o13','rechazada',79]
 ] AS t
 MATCH (u:Usuario {id: t[0]}), (o:Oferta {id: t[1]})
 MERGE (u)-[r:POSTULA_A]->(o)
-SET r.estado = t[2], r.fecha = date(t[3]);
+SET r.estado = t[2], r.fecha = date({timezone: 'America/Bogota'}) - duration({days: t[3]});
 
 //Notificaciones 
 UNWIND [
-  {id:'n01', para:'u05', tipo:'conexion_solicitud',  mensaje:'Tomas Navarro quiere conectar contigo.',                              leida:false, fecha:'2026-10-28T09:15:00', enlace:'/conexiones/solicitudes'},
-  {id:'n02', para:'u08', tipo:'conexion_solicitud',  mensaje:'Andrea Castro quiere conectar contigo.',                              leida:false, fecha:'2026-10-29T10:00:00', enlace:'/conexiones/solicitudes'},
-  {id:'n03', para:'u01', tipo:'conexion_solicitud',  mensaje:'Carlos Pacheco quiere conectar contigo.',                             leida:false, fecha:'2026-10-30T08:40:00', enlace:'/conexiones/solicitudes'},
-  {id:'n04', para:'u02', tipo:'postulacion_estado',  mensaje:'Tu postulacion a "Ingeniero de Datos Senior" esta en revision.',      leida:true,  fecha:'2026-10-19T14:20:00', enlace:'/postulaciones'},
-  {id:'n05', para:'u21', tipo:'postulacion_estado',  mensaje:'Tu postulacion a "Disenador UX/UI" fue rechazada.',                   leida:false, fecha:'2026-10-20T16:05:00', enlace:'/postulaciones'},
-  {id:'n06', para:'u26', tipo:'oferta_afin',         mensaje:'Nueva oferta que coincide con tus habilidades: "Desarrollador Backend Python".', leida:false, fecha:'2026-10-05T08:00:00', enlace:'/ofertas/o01'},
-  {id:'n07', para:'u07', tipo:'oferta_afin',         mensaje:'Nueva oferta que coincide con tus habilidades: "Cientifico de Datos".', leida:false, fecha:'2026-10-06T08:00:00', enlace:'/ofertas/o05'}
+  {id:'n01', para:'u05', tipo:'conexion_solicitud',  mensaje:'Tomas Navarro quiere conectar contigo.',                              leida:false, hace_dias:10, enlace:'/conexiones/solicitudes'},
+  {id:'n02', para:'u08', tipo:'conexion_solicitud',  mensaje:'Andrea Castro quiere conectar contigo.',                              leida:false, hace_dias:9, enlace:'/conexiones/solicitudes'},
+  {id:'n03', para:'u01', tipo:'conexion_solicitud',  mensaje:'Carlos Pacheco quiere conectar contigo.',                             leida:false, hace_dias:8, enlace:'/conexiones/solicitudes'},
+  {id:'n04', para:'u02', tipo:'postulacion_estado',  mensaje:'Tu postulacion a "Ingeniero de Datos Senior" esta en revision.',      leida:true,  hace_dias:19, enlace:'/postulaciones'},
+  {id:'n05', para:'u21', tipo:'postulacion_estado',  mensaje:'Tu postulacion a "Disenador UX/UI" fue rechazada.',                   leida:false, hace_dias:18, enlace:'/postulaciones'},
+  {id:'n06', para:'u26', tipo:'oferta_afin',         mensaje:'Nueva oferta que coincide con tus habilidades: "Desarrollador Backend Python".', leida:false, hace_dias:33, enlace:'/ofertas/o01'},
+  {id:'n07', para:'u07', tipo:'oferta_afin',         mensaje:'Nueva oferta que coincide con tus habilidades: "Cientifico de Datos".', leida:false, hace_dias:32, enlace:'/ofertas/o05'}
 ] AS f
 MATCH (u:Usuario {id: f.para})
 MERGE (n:Notificacion {id: f.id})
 SET n.tipo = f.tipo, n.mensaje = f.mensaje, n.leida = f.leida,
-    n.fecha = datetime(f.fecha), n.enlace = f.enlace
+    n.fecha = datetime() - duration({days: f.hace_dias}), n.enlace = f.enlace
 MERGE (n)-[:PARA]->(u);

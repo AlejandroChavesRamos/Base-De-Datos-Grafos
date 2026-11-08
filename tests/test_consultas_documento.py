@@ -34,6 +34,9 @@ FILAS = {
             "puntaje": 45, "postulado": False}],
     "q5": [{"proyecto_1": "Puerto", "proyecto_2": "Fraude", "tecnologias": ["Python"], "miembros": ["Ana Ruiz"], "afinidad": 3}],
     "q6": [{"habilidad": "Inglés", "categoria": "idioma", "ofertas": 7, "como_obligatoria": 3}],
+    "c1": [{"ruta": ["Ana Ruiz", "Beto Paz", "Caro Rojo"], "saltos": 2}],
+    "c2": [{"ruta": ["Ana Ruiz", "Beto Paz", "Caribe Labs"], "saltos": 3, "oferta": "Backend"}],
+    "h1": [{"habilidad": "Python", "categoria": "tecnica", "nivel_a": 5, "nivel_b": 3}],
     "a1": [{"usuario": _usr(pagerank=0.31), "conexiones": 9}],
     "a2": [{"comunidad": 12, "miembros": 3, "personas": ["Ana Ruiz", "Beto Paz"]}],
     "a3": [{"usuario": _usr(intermediacion=14.0), "conexiones": 4}],
@@ -110,13 +113,13 @@ def test_el_enlace_del_menu_solo_aparece_a_quien_puede_entrar(cliente, como, mon
 
 
 # ------------------------------------------------------------- lo que se muestra
-def test_la_pagina_muestra_las_12_consultas_con_su_pregunta(cliente, como):
+def test_la_pagina_muestra_las_15_consultas_con_su_pregunta(cliente, como):
     como("admin", PERMISOS_ADMIN)
     html = cliente.get("/consultas").text
-    assert len(re.findall(r'<article class="consulta"', html)) == 12
+    assert len(re.findall(r'<article class="consulta"', html)) == 15
     for c in laboratorio.CONSULTAS:
         assert escape(c["pregunta"]) in html and f'id="{c["id"]}"' in html
-    for grupo in ("Las seis preguntas del enunciado", "Analítica de la red", "Recomendaciones"):
+    for grupo in ("Las seis preguntas del enunciado", "Caminos y habilidades compartidas", "Analítica de la red", "Recomendaciones"):
         assert grupo in html
 
 
@@ -171,14 +174,14 @@ def test_cada_consulta_lista_sus_parametros_y_son_los_que_se_envian():
 def test_las_consultas_del_laboratorio_solo_leen_datos():
     prohibidas = re.compile(r"\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|CALL|LOAD)\b", re.I)
     constantes = {n: getattr(cd, n) for n in dir(cd) if n.isupper() and isinstance(getattr(cd, n), str)}
-    assert len(constantes) == 13                                              # 12 del laboratorio + proyectos relacionados
+    assert len(constantes) == 16                                              # 15 del laboratorio + proyectos relacionados
     for nombre, texto in constantes.items():
         sin_comentarios = "\n".join(l for l in texto.splitlines() if not l.strip().startswith("//"))
         assert not prohibidas.search(sin_comentarios), f"{nombre} contiene una instruccion que escribe"
 
 
 def test_las_consultas_que_muestran_personas_ocultan_cuentas_desactivadas():
-    for nombre in ("Q1_SIMILARES", "Q2_COMUNES", "Q3_RUTA", "Q4_CANDIDATOS", "Q5_PROYECTOS", "Q6_DEMANDA", "A1_INFLUYENTES", "A2_COMUNIDADES",
+    for nombre in ("Q1_SIMILARES", "Q2_COMUNES", "Q3_RUTA", "Q4_CANDIDATOS", "Q5_PROYECTOS", "Q6_DEMANDA", "C1_CAMINO_PERSONA", "C2_CAMINO_OFERTA", "A1_INFLUYENTES", "A2_COMUNIDADES",
                    "A3_PUENTES", "R1_CONTACTOS", "R2_EMPLEOS", "R3_COLABORADORES"):
         assert "activa: false" in getattr(cd, nombre), nombre
 
@@ -226,6 +229,17 @@ def test_resultado_con_enlaces_a_los_perfiles(cliente, como):
     assert "Ana Ruiz → Beto Paz → Caribe Labs" in cliente.get("/consultas?consulta=q3&persona=u1&empresa=e1").text
 
 
+def test_resultados_de_caminos_y_habilidades_compartidas(cliente, como):
+    como("admin", PERMISOS_ADMIN)
+    r = cliente.get("/consultas?consulta=c1&persona_a=u1&persona_b=u3")
+    assert "Ana Ruiz → Beto Paz → Caro Rojo" in r.text and ">2<" in r.text
+    r = cliente.get("/consultas?consulta=c2&persona=u1&oferta=o-x")
+    assert "Ana Ruiz → Beto Paz → Caribe Labs → Backend" in r.text and "Ruta hasta la oferta" in r.text
+    r = cliente.get("/consultas?consulta=h1&persona_a=u1&persona_b=u2")
+    bloque = r.text.split('data-resultado="h1"')[1].split("</article>")[0]
+    assert "Python" in bloque and "Tecnica" in bloque and ">5<" in bloque and ">3<" in bloque
+
+
 def test_q4_muestra_puntaje_y_si_ya_se_postulo(cliente, como):
     como("admin", PERMISOS_ADMIN)
     bloque = cliente.get("/consultas?consulta=q4&oferta=o-x").text.split('data-resultado="q4"')[1]
@@ -247,7 +261,7 @@ def test_el_texto_que_viene_de_la_base_se_escapa(cliente, como):
 def test_el_detalle_cypher_es_accesible_y_solo_la_consulta_activa_tiene_resultado(cliente, como):
     como("admin", PERMISOS_ADMIN)
     html = cliente.get("/consultas?consulta=q6").text
-    assert html.count("<details class=\"cypher-detalle\">") == 12 and html.count('data-resultado=') == 1
+    assert html.count("<details class=\"cypher-detalle\">") == 15 and html.count('data-resultado=') == 1
     assert 'class="cypher" tabindex="0"' in html and "Ver la consulta Cypher" in html
 
 

@@ -1,5 +1,6 @@
 """Consultas Cypher sobre usuarios (perfil, relaciones y similitud)."""
 from app.database import db
+from app.repositories import consultas_documento as _doc
 
 
 def resumen(uid: str):
@@ -149,3 +150,8 @@ def similares(uid: str, limite: int = 4):
         """,
         id=uid, limite=limite,
     )
+
+
+def habilidades_en_comun(a: str, b: str):
+    """Habilidades que comparten dos personas, con el nivel de cada una (consulta H1)."""
+    return _doc.habilidades_en_comun(a, b)

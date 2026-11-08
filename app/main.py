@@ -10,7 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import dependencias
 from app.database import db
 from app.repositories import sesiones
-from app.routers import acciones, admin, analitica, auth, gestion, paginas
+from app.routers import acciones, admin, analitica, auth, caminos, gestion, paginas
 from app.templating import templates
 
 BASE = Path(__file__).resolve().parent
@@ -35,6 +35,7 @@ app.include_router(admin.router)
 app.include_router(acciones.router)  # antes que paginas: /perfil/editar gana a /perfil/{id}
 app.include_router(gestion.router)
 app.include_router(analitica.router)
+app.include_router(caminos.router)
 app.include_router(paginas.router)
 
 

@@ -322,3 +322,8 @@ def candidatos_sugeridos(oid: str, limite: int = 5):
     """Personas que buscan empleo, cumplen todas las habilidades obligatorias y aun no se postularon."""
     filas = _doc.candidatos(oid, 40)
     return [f for f in filas if f["usuario"].get("buscando_empleo") and not f["postulado"]][:limite]
+
+
+def camino_a_oferta(uid: str, oid: str):
+    """Ruta mas corta de la persona hasta la oferta (por la empresa que la publica), o None."""
+    return _doc.camino_a_oferta(uid, oid)

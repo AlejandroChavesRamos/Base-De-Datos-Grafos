@@ -5,6 +5,8 @@ ve es EXACTAMENTE lo que se envia a Neo4j. Todas solo leen datos, ocultan las cu
 desactivadas y reciben sus valores por parametros ($nombre), nunca pegados al texto.
 
   Q1-Q6  las seis preguntas del enunciado
+  C1-C2  caminos entre personas y desde una persona hasta una oferta (Q3 es el camino hasta una empresa)
+  H1     habilidades que comparten dos personas
   A1-A3  analitica de la red (usa propiedades calculadas con Graph Data Science)
   R1-R3  recomendaciones de contactos, empleos y colaboradores
 """
@@ -93,6 +95,34 @@ WHERE o.fecha_cierre >= date({timezone: 'America/Bogota'})
 RETURN h.nombre AS habilidad, h.categoria AS categoria, count(o) AS ofertas,
        sum(CASE WHEN r.obligatoria THEN 1 ELSE 0 END) AS como_obligatoria
 ORDER BY ofertas DESC, habilidad
+LIMIT $limite"""
+
+C1_CAMINO_PERSONA = """// Caminos entre dos personas: ¿cómo están conectadas? (grados de separación)
+// allShortestPaths devuelve todas las rutas de la longitud mínima; solo se camina por CONECTA_CON.
+MATCH (a:Usuario {id: $a}), (b:Usuario {id: $b})
+WHERE a <> b
+MATCH p = allShortestPaths((a)-[:CONECTA_CON*..6]-(b))
+WHERE all(n IN nodes(p) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(n) })
+RETURN [n IN nodes(p) | n.nombre + ' ' + n.apellido] AS ruta, length(p) AS saltos
+LIMIT $limite"""
+
+C2_CAMINO_OFERTA = """// Camino desde una persona hasta una oferta (oportunidad laboral).
+// La oferta se alcanza por la empresa que la publica (PUBLICA): se camina por contactos (CONECTA_CON)
+// y por empleo VIGENTE (TRABAJA_EN con actual = true) hasta la empresa, y se suma ese último salto.
+MATCH (u:Usuario {id: $id}), (e:Empresa)-[:PUBLICA]->(o:Oferta {id: $oferta})
+WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(e) }
+MATCH p = allShortestPaths((u)-[:CONECTA_CON|TRABAJA_EN*..8]-(e))
+WHERE all(r IN relationships(p) WHERE type(r) = 'CONECTA_CON' OR r.actual = true)
+  AND all(n IN nodes(p) WHERE NOT EXISTS { (:Cuenta {activa: false})-[:TIENE_PERFIL]->(n) })
+RETURN [n IN nodes(p) | coalesce(n.nombre + ' ' + n.apellido, n.nombre)] AS ruta,
+       length(p) + 1 AS saltos, o.titulo AS oferta
+LIMIT $limite"""
+
+H1_HABILIDADES_EN_COMUN = """// Habilidades que comparten dos personas, con el nivel (1 a 5) que tiene cada una.
+MATCH (a:Usuario {id: $a})-[ta:TIENE_HABILIDAD]->(h:Habilidad)<-[tb:TIENE_HABILIDAD]-(b:Usuario {id: $b})
+WHERE a <> b
+RETURN h.nombre AS habilidad, h.categoria AS categoria, ta.nivel AS nivel_a, tb.nivel AS nivel_b
+ORDER BY h.nombre
 LIMIT $limite"""
 
 A1_INFLUYENTES = """// Usuarios más influyentes: PageRank (calculado con Graph Data Science) frente al número de conexiones.
@@ -196,3 +226,18 @@ def proyectos_relacionados(uid: str, limite: int = 4):
 
 def candidatos(oferta_id: str, limite: int = 20):
     return ejecutar(Q4_CANDIDATOS, oferta=oferta_id, limite=limite)[0]
+
+
+def camino_a_oferta(uid: str, oferta_id: str):
+    """La ruta mas corta de la persona hasta la oferta (o None si no hay)."""
+    filas = ejecutar(C2_CAMINO_OFERTA, id=uid, oferta=oferta_id, limite=1)[0]
+    return filas[0] if filas else None
+
+
+def habilidades_en_comun(a: str, b: str, limite: int = 30):
+    return ejecutar(H1_HABILIDADES_EN_COMUN, a=a, b=b, limite=limite)[0]
+
+
+def proyectos_afines(limite: int = 6):
+    """Q5: pares de proyectos que comparten tecnologias o miembros."""
+    return ejecutar(Q5_PROYECTOS, limite=limite)[0]

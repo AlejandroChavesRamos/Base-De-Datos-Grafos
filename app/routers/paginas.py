@@ -51,6 +51,7 @@ def perfil(request: Request, usuario_id: str, yo: dict = Depends(visor)):
         relacion=usuarios.estado_relacion(yo["id"], usuario_id) if otra_persona else "ninguna",
         ruta=usuarios.ruta(yo["id"], usuario_id) if otra_persona else None,
         en_comun=usuarios.contactos_en_comun(yo["id"], usuario_id) if otra_persona else [],
+        habilidades_comunes=usuarios.habilidades_en_comun(yo["id"], usuario_id) if otra_persona else [],
         similares=usuarios.similares(usuario_id, 4),
     )
 
@@ -80,10 +81,11 @@ def mi_red(request: Request, yo: dict = Depends(usuario_actual)):
 def empleos(request: Request, oferta: str | None = None, yo: dict = Depends(usuario_actual)):
     lista = ofertas.recomendadas(yo["id"], 50)
     id_sel = oferta or (lista[0]["oferta"]["id"] if lista else None)
+    detalle = ofertas.detalle(id_sel, yo["id"]) if id_sel else None
     return render(
         request, "empleos.html", yo,
-        lista=lista, id_sel=id_sel,
-        detalle=ofertas.detalle(id_sel, yo["id"]) if id_sel else None,
+        lista=lista, id_sel=id_sel, detalle=detalle,
+        camino=ofertas.camino_a_oferta(yo["id"], id_sel) if detalle else None,
         postulaciones=ofertas.mis_postulaciones(yo["id"]),
     )
 

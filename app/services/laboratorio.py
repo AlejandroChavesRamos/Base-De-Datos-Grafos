@@ -63,6 +63,19 @@ def _p_q6(f):
             [[x["habilidad"], (x["categoria"] or "").capitalize(), str(x["ofertas"]), str(x["como_obligatoria"])] for x in f])
 
 
+def _p_c1(f):
+    return (["Ruta", "Saltos"], [[" → ".join(x["ruta"]), str(x["saltos"])] for x in f])
+
+
+def _p_c2(f):
+    return (["Ruta hasta la oferta", "Saltos", "Oferta"], [[" → ".join(x["ruta"] + [x["oferta"]]), str(x["saltos"]), x["oferta"]] for x in f])
+
+
+def _p_h1(f):
+    return (["Habilidad", "Categoría", "Nivel de la primera persona", "Nivel de la segunda"],
+            [[x["habilidad"], (x["categoria"] or "").capitalize(), str(x["nivel_a"]), str(x["nivel_b"])] for x in f])
+
+
 def _p_a1(f):
     return (["Puesto", "Persona", "PageRank", "Conexiones"],
             [[str(i), _persona(x["usuario"]), _num(x["usuario"]["pagerank"]), str(x["conexiones"])] for i, x in enumerate(f, 1)])
@@ -111,6 +124,15 @@ CONSULTAS = [
      "cypher": cd.Q5_PROYECTOS, "parametros": [], "presentar": _p_q5, "armar": lambda v: {}},
     {"id": "q6", "grupo": "enunciado", "codigo": "Q6", "pregunta": "¿Qué habilidades son las más demandadas en las ofertas?",
      "cypher": cd.Q6_DEMANDA, "parametros": [], "presentar": _p_q6, "armar": lambda v: {}},
+    {"id": "c1", "grupo": "caminos", "codigo": "C1", "pregunta": "¿Cómo están conectadas dos personas?",
+     "cypher": cd.C1_CAMINO_PERSONA, "parametros": [P_PERSONA_A, P_PERSONA_B], "presentar": _p_c1,
+     "armar": lambda v: {"a": v["persona_a"], "b": v["persona_b"]}},
+    {"id": "c2", "grupo": "caminos", "codigo": "C2", "pregunta": "¿Cuál es el camino de una persona hasta una oferta laboral?",
+     "cypher": cd.C2_CAMINO_OFERTA, "parametros": [P_PERSONA, P_OFERTA], "presentar": _p_c2,
+     "armar": lambda v: {"id": v["persona"], "oferta": v["oferta"]}},
+    {"id": "h1", "grupo": "caminos", "codigo": "H1", "pregunta": "¿Qué habilidades comparten dos personas?",
+     "cypher": cd.H1_HABILIDADES_EN_COMUN, "parametros": [P_PERSONA_A, P_PERSONA_B], "presentar": _p_h1,
+     "armar": lambda v: {"a": v["persona_a"], "b": v["persona_b"]}},
     {"id": "a1", "grupo": "analitica", "codigo": "A1", "pregunta": "¿Quiénes son los usuarios más influyentes?",
      "cypher": cd.A1_INFLUYENTES, "parametros": [], "presentar": _p_a1, "armar": lambda v: {}, "requiere_metricas": True},
     {"id": "a2", "grupo": "analitica", "codigo": "A2", "pregunta": "¿Qué comunidades se detectan en la red?",
@@ -128,7 +150,7 @@ CONSULTAS = [
      "armar": lambda v: {"id": v["persona"]}},
 ]
 POR_ID = {c["id"]: c for c in CONSULTAS}
-GRUPOS = [("enunciado", "Las seis preguntas del enunciado"), ("analitica", "Analítica de la red"),
+GRUPOS = [("enunciado", "Las seis preguntas del enunciado"), ("caminos", "Caminos y habilidades compartidas"), ("analitica", "Analítica de la red"),
           ("recomendacion", "Recomendaciones")]
 
 

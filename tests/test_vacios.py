@@ -36,6 +36,7 @@ def base(monkeypatch):
     fijar("usuarios.estado_relacion", "ninguna")
     fijar("usuarios.ruta", None)
     fijar("usuarios.contactos_en_comun", [])
+    fijar("usuarios.habilidades_en_comun", [])
     fijar("empresas.obtener", {"empresa": {**EMPRESA, "descripcion": "x", "sector": "Salud", "ciudad": "Cali", "tamano": "mediana"},
                                "empleados": 0, "ofertas": [], "contactos": [], "camino": None})
     fijar("empresas.empleados", [])

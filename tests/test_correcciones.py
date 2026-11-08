@@ -131,6 +131,7 @@ def test_empleo_vencido_no_ofrece_postularse(cliente, como, fijar):
     fijar("ofertas.recomendadas", [])
     fijar("ofertas.mis_postulaciones", [])
     fijar("ofertas.detalle", _detalle(vencida=True))
+    fijar("ofertas.camino_a_oferta", None)
     html = cliente.get("/empleos?oferta=o1").text
     assert "/empleos/o1/postular" not in html
     assert "Oferta vencida" in html
@@ -249,6 +250,7 @@ def test_perfil_muestra_empresa_archivada_sin_enlace(cliente, como, fijar):
     fijar("usuarios.estado_relacion", "ninguna")
     fijar("usuarios.ruta", None)
     fijar("usuarios.contactos_en_comun", [])
+    fijar("usuarios.habilidades_en_comun", [])
     html = cliente.get("/perfil/u2").text
     assert "Vieja SA" in html and 'href="/empresa/e9"' not in html
 

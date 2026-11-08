@@ -43,6 +43,7 @@ def datos(monkeypatch):
     fijar("ofertas.recomendadas", [RECOMENDADA])
     fijar("ofertas.demanda_habilidades", [{"habilidad": "Python", "ofertas": 3}])
     fijar("ofertas.detalle", DETALLE)
+    fijar("ofertas.camino_a_oferta", None)
     fijar("ofertas.mis_postulaciones", [])
     fijar("red.actividad", [])
     fijar("red.sugerencias", [{"usuario": _persona("u3", "Eva", "Mora"), "amigos_comunes": 2}])
@@ -53,6 +54,7 @@ def datos(monkeypatch):
     fijar("red.conexiones", [{"usuario": _persona(), "empresa": "Caribe Labs", "desde": date(2024, 1, 1)}])
     fijar("notificaciones.listar", [{"n": {"id": "n1", "tipo": "conexion_solicitud", "mensaje": "Hola", "fecha": date(2026, 1, 1), "leida": False}}])
     fijar("perfiles.proyectos_relacionados", [])
+    fijar("perfiles.proyectos_afines", [])
     fijar("perfiles.listar_proyectos", [{"proyecto": {"id": "p1", "nombre": "Puerto", "estado": "en_curso", "descripcion": "Texto"},
                                          "empresa": None, "miembros": 2, "tecnologias": ["Python"], "mi_rol": None}])
     fijar("perfiles.catalogo_habilidades", [{"id": "h1", "nombre": "Python", "categoria": "tecnica"}])
@@ -63,6 +65,7 @@ def datos(monkeypatch):
     fijar("usuarios.estado_relacion", "ninguna")
     fijar("usuarios.ruta", None)
     fijar("usuarios.contactos_en_comun", [])
+    fijar("usuarios.habilidades_en_comun", [])
     fijar("empresas.obtener", {"empresa": {"id": "e1", "nombre": "Caribe Labs", "descripcion": "x", "sector": "Salud",
                                            "ciudad": "Cali", "tamano": "mediana"},
                                "empleados": 2, "ofertas": [], "contactos": [], "camino": None})

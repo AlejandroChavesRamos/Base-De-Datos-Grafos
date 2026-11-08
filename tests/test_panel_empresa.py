@@ -47,6 +47,7 @@ def datos(monkeypatch):
     fijar("app.repositories.usuarios.estado_relacion", "ninguna")
     fijar("app.repositories.usuarios.ruta", None)
     fijar("app.repositories.usuarios.contactos_en_comun", [])
+    fijar("app.repositories.usuarios.habilidades_en_comun", [])
     return fijar
 
 

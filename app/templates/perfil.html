@@ -122,6 +122,20 @@
     </section>
     {% endif %}
 
+    {% if not es_propio and yo.tipo == 'persona' %}
+    <section class="tarjeta" id="habilidades-comunes">
+      <header class="tarjeta-cab"><h2>Habilidades en común contigo</h2></header>
+      {% if habilidades_comunes %}
+      <ul class="lista-hab pad">
+        {% for h in habilidades_comunes %}
+        <li><div><strong>{{ h.habilidad }}</strong><div class="sub">{{ h.categoria|capitalize }}</div></div>
+          <div class="hab-nivel"><small>Tú: {{ h.nivel_a|nivel_texto }}</small><small>{{ u.nombre }}: {{ h.nivel_b|nivel_texto }}</small></div></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="sub pad">No comparten habilidades registradas todavía.</p>{% endif %}
+    </section>
+    {% endif %}
+
     {% if similares %}
     <section class="tarjeta">
       <header class="tarjeta-cab"><h2>Perfiles similares</h2></header>
